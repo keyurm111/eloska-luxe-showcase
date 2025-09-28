@@ -20,7 +20,8 @@ const Footer = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const response = await fetch('http://localhost:5004/api/newsletter/subscribe', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api';
+      const response = await fetch(`${API_BASE_URL}/newsletter/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -3409,13 +3409,15 @@ const Products = () => {
       };
       
       console.log('Request data:', requestData);
-      console.log('Making request to: http://localhost:5004/api/product-inquiries/submit');
+      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api';
+      console.log('Making request to:', `${API_BASE_URL}/product-inquiries/submit`);
       
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const response = await fetch('http://localhost:5004/api/product-inquiries/submit', {
+      const response = await fetch(`${API_BASE_URL}/product-inquiries/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
