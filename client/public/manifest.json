@@ -1,0 +1,33 @@
+{
+  "name": "Eloska World - Luxury Manufacturing Excellence",
+  "short_name": "Eloska World",
+  "description": "Premium manufacturer of Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, Sari Mirrors and more. Luxury in every detail.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8B0000",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/eloska logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/eloska logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

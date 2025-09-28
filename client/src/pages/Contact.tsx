@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 // Custom hook for scroll animations
 const useScrollAnimation = () => {
@@ -37,6 +38,12 @@ const useScrollAnimation = () => {
 };
 
 const Contact = () => {
+  // Set page title
+  usePageTitle({
+    title: "Contact Us - Eloska World | Get in Touch",
+    description: "Contact Eloska World for inquiries about our premium manufacturing services. Reach us via phone, email, or visit our facility. We're here to help with your luxury product needs."
+  });
+  
   // Scroll animation hooks for different sections
   const [heroRef, heroVisible] = useScrollAnimation();
   const [contactInfoRef, contactInfoVisible] = useScrollAnimation();

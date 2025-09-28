@@ -3,6 +3,7 @@ import { ArrowRight, Star, Award, Globe, Users, ChevronLeft, ChevronRight } from
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useState, useEffect, useRef } from 'react';
+import { usePageTitle } from '@/hooks/use-page-title';
 import heroImage from '@/assets/hero-image.jpg';
 import mirrorsImage from '@/assets/mirrors-collection.jpg';
 import scarfsImage from '@/assets/scarfs-collection.jpg';
@@ -549,6 +550,12 @@ const useScrollAnimation = () => {
 
 const Home = () => {
   const [ctaImageIndex, setCtaImageIndex] = useState(0);
+  
+  // Set page title
+  usePageTitle({
+    title: "Home - Eloska World | Luxury Manufacturing Excellence",
+    description: "Discover premium manufacturing excellence with Eloska World. Explore our luxury collections of Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, Sari Mirrors and more."
+  });
   
   // Scroll animation hooks for different sections
   const [heroRef, heroVisible] = useScrollAnimation();

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 // Custom hook for scroll animations
 const useScrollAnimation = () => {
@@ -35,6 +36,12 @@ const useScrollAnimation = () => {
 };
 
 const About = () => {
+  // Set page title
+  usePageTitle({
+    title: "About Us - Eloska World | Luxury Manufacturing Excellence",
+    description: "Learn about Eloska World's journey in luxury manufacturing. Discover our ISO 9001:2015 certified facilities, premium quality standards, and commitment to excellence in every product."
+  });
+  
   // Scroll animation hooks for different sections
   const [heroRef, heroVisible] = useScrollAnimation();
   const [overviewRef, overviewVisible] = useScrollAnimation();

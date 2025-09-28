@@ -2,9 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const NotFound = () => {
   const location = useLocation();
+
+  // Set page title
+  usePageTitle({
+    title: "404 - Page Not Found | Eloska World",
+    description: "The page you're looking for doesn't exist. Return to Eloska World's homepage to explore our luxury manufacturing products and services."
+  });
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);

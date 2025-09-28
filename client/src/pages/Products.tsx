@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 // Import images
 import mirrorsImage from '@/assets/mirrors-collection.jpg';
@@ -51,6 +52,12 @@ const Products = () => {
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
+  
+  // Set page title based on category
+  usePageTitle({
+    title: category ? `${category.charAt(0).toUpperCase() + category.slice(1)} - Products | Eloska World` : "Products - Eloska World",
+    description: category ? `Explore our premium ${category} collection at Eloska World. High-quality manufacturing with luxury finishes and designs.` : "Discover our complete range of premium products including Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, Sari Mirrors and more."
+  });
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
