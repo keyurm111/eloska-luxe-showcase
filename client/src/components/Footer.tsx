@@ -16,15 +16,11 @@ const Footer = () => {
 
     setIsSubmitting(true);
     try {
-      // Create AbortController for timeout (increased to 30 seconds for Render)
+      // Create AbortController for timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log('Request timeout after 30 seconds');
-        controller.abort();
-      }, 30000); // 30 second timeout for Render cold starts
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api';
-      const response = await fetch(`${API_BASE_URL}/newsletter/subscribe`, {
+      const response = await fetch('http://localhost:5004/api/newsletter/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

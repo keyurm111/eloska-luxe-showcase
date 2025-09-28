@@ -1,194 +1,301 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, query } = require('express-validator');
 const NormalInquiry = require('../models/NormalInquiry');
 const auth = require('../middleware/auth');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const emailService = require('../services/emailService');
+
 
 const router = express.Router();
 
-// Submit normal inquiry (public)
+// @route   POST /api/normal-inquiries/submit
+// @desc    Submit a new normal inquiry (public)
+// @access  Public
 router.post('/submit', [
-  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('phone').trim().isLength({ min: 10 }).withMessage('Valid phone number is required'),
-  body('subject').trim().isLength({ min: 5 }).withMessage('Subject must be at least 5 characters'),
-  body('message').trim().isLength({ min: 10 }).withMessage('Message must be at least 10 characters')
+  body('name').isString().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
+  body('email').isEmail().withMessage('Please enter a valid email address'),
+  body('phone').isString().isLength({ min: 1, max: 20 }).withMessage('Phone is required and must be less than 20 characters'),
+  body('company').optional().isString().isLength({ max: 100 }).withMessage('Company name must be less than 100 characters'),
+  body('subject').isString().isLength({ min: 1, max: 200 }).withMessage('Subject is required and must be less than 200 characters'),
+  body('message').isString().isLength({ min: 1, max: 2000 }).withMessage('Message is required and must be less than 2000 characters')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
+        message: 'Validation errors',
         errors: errors.array()
       });
     }
 
-    const inquiry = new NormalInquiry(req.body);
-    await inquiry.save();
+    const { name, email, phone, company, subject, message } = req.body;
 
-    // Send response immediately without waiting for email
-    res.status(201).json({
-      success: true,
-      message: 'Inquiry submitted successfully',
-      data: {
-        id: inquiry._id,
-        status: inquiry.status
-      }
+    const inquiry = new NormalInquiry({
+      name,
+      email,
+      phone,
+      company,
+      subject,
+      message,
+      status: 'pending'
     });
 
-    // Send email notification asynchronously (non-blocking)
-    setImmediate(async () => {
-      try {
-        await emailService.sendNormalInquiryNotification(inquiry);
-        console.log('✅ Normal inquiry notification sent successfully');
-      } catch (emailError) {
-        console.log('⚠️ Email notification skipped:', emailError.message);
-        // Don't fail the request if email fails
-      }
-    });
+        await inquiry.save();
+
+        // Send response immediately without waiting for email
+        res.status(201).json({
+          success: true,
+          message: 'Inquiry submitted successfully',
+          data: {
+            id: inquiry._id,
+            status: inquiry.status
+          }
+        });
+
+        // Send email notification asynchronously (non-blocking)
+        setImmediate(async () => {
+          try {
+            await emailService.sendNormalInquiryNotification(inquiry);
+            console.log('✅ Normal inquiry notification sent successfully');
+          } catch (emailError) {
+            console.log('⚠️ Email notification skipped:', emailError.message);
+            // Don't fail the request if email fails
+          }
+        });
   } catch (error) {
-    console.error('Normal inquiry submission error:', error);
+    console.error('Submit normal inquiry error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to submit inquiry'
+      message: 'Server error'
     });
   }
 });
 
-// Get all normal inquiries (admin only)
-router.get('/', auth, async (req, res) => {
+// Apply auth middleware to all other routes
+router.use(auth);
+
+// @route   GET /api/normal-inquiries
+// @desc    Get all normal inquiries with pagination and filters
+// @access  Private
+router.get('/', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('status').optional().isIn(['pending', 'processing', 'completed', 'cancelled']),
+  query('search').optional().isString()
+], async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
-    
-    const filter = {};
-    if (status) filter.status = status;
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { subject: { $regex: search, $options: 'i' } },
-        { message: { $regex: search, $options: 'i' } }
-      ];
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
     }
 
-    const sort = {};
-    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    const inquiries = await NormalInquiry.find(filter)
-      .sort(sort)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
 
-    const total = await NormalInquiry.countDocuments(filter);
+    // Build filter object
+    const filter = {};
+    
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+    
+    if (req.query.search) {
+      filter.$text = { $search: req.query.search };
+    }
+
+    // Build sort object
+    const sort = { createdAt: -1 };
+
+    const [inquiries, total] = await Promise.all([
+      NormalInquiry.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      NormalInquiry.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
       success: true,
       data: {
-        inquiries,
-        pagination: {
-          current: parseInt(page),
-          pages: Math.ceil(total / limit),
-          total
-        }
+        data: inquiries,
+        total,
+        page,
+        limit,
+        totalPages
       }
     });
   } catch (error) {
     console.error('Get normal inquiries error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch normal inquiries'
+      message: 'Server error'
     });
   }
 });
 
-// Get single normal inquiry (admin only)
-router.get('/:id', auth, async (req, res) => {
+// @route   GET /api/normal-inquiries/:id
+// @desc    Get single normal inquiry
+// @access  Private
+router.get('/:id', async (req, res) => {
   try {
     const inquiry = await NormalInquiry.findById(req.params.id);
+    
     if (!inquiry) {
       return res.status(404).json({
         success: false,
-        message: 'Normal inquiry not found'
+        message: 'Inquiry not found'
       });
     }
 
     res.json({
       success: true,
-      data: { inquiry }
+      data: inquiry
     });
   } catch (error) {
     console.error('Get normal inquiry error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch normal inquiry'
+      message: 'Server error'
     });
   }
 });
 
-// Update normal inquiry status (admin only)
-router.put('/:id', auth, [
+// @route   PATCH /api/normal-inquiries/:id/status
+// @desc    Update inquiry status
+// @access  Private
+router.patch('/:id/status', [
   body('status').isIn(['pending', 'processing', 'completed', 'cancelled']),
-  body('adminNotes').optional().trim()
+  body('adminNotes').optional().isString().isLength({ max: 500 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
+        message: 'Validation errors',
         errors: errors.array()
       });
     }
 
+    const { status, adminNotes } = req.body;
+
+
     const inquiry = await NormalInquiry.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true, runValidators: true }
+      { 
+        status,
+        ...(adminNotes && { adminNotes })
+      },
+      { new: true }
     );
 
     if (!inquiry) {
       return res.status(404).json({
         success: false,
-        message: 'Normal inquiry not found'
+        message: 'Inquiry not found'
       });
     }
 
     res.json({
       success: true,
-      message: 'Normal inquiry updated successfully',
-      data: { inquiry }
+      message: 'Status updated successfully',
+      data: inquiry
     });
   } catch (error) {
-    console.error('Update normal inquiry error:', error);
+    console.error('Update inquiry status error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update normal inquiry'
+      message: 'Server error'
     });
   }
 });
 
-// Delete normal inquiry (admin only)
-router.delete('/:id', auth, async (req, res) => {
+// @route   DELETE /api/normal-inquiries/:id
+// @desc    Delete normal inquiry
+// @access  Private
+router.delete('/:id', async (req, res) => {
   try {
+
     const inquiry = await NormalInquiry.findByIdAndDelete(req.params.id);
+    
     if (!inquiry) {
       return res.status(404).json({
         success: false,
-        message: 'Normal inquiry not found'
+        message: 'Inquiry not found'
       });
     }
 
     res.json({
       success: true,
-      message: 'Normal inquiry deleted successfully'
+      message: 'Inquiry deleted successfully'
     });
   } catch (error) {
-    console.error('Delete normal inquiry error:', error);
+    console.error('Delete inquiry error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete normal inquiry'
+      message: 'Server error'
+    });
+  }
+});
+
+// @route   GET /api/normal-inquiries/export
+// @desc    Export normal inquiries to CSV
+// @access  Private
+router.get('/export', async (req, res) => {
+  try {
+    // Build filter object
+    const filter = {};
+    
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+    
+    if (req.query.search) {
+      filter.$text = { $search: req.query.search };
+    }
+
+    const inquiries = await NormalInquiry.find(filter).sort({ createdAt: -1 }).lean();
+
+    // Create CSV
+    const csvWriter = createCsvWriter({
+      path: 'temp-normal-inquiries.csv',
+      header: [
+        { id: 'name', title: 'Name' },
+        { id: 'email', title: 'Email' },
+        { id: 'phone', title: 'Phone' },
+        { id: 'company', title: 'Company' },
+        { id: 'subject', title: 'Subject' },
+        { id: 'message', title: 'Message' },
+        { id: 'status', title: 'Status' },
+        { id: 'adminNotes', title: 'Admin Notes' },
+        { id: 'createdAt', title: 'Created At' }
+      ]
+    });
+
+    await csvWriter.writeRecords(inquiries);
+
+    res.download('temp-normal-inquiries.csv', `normal-inquiries-${new Date().toISOString().split('T')[0]}.csv`, (err) => {
+      if (err) {
+        console.error('Download error:', err);
+      }
+      // Clean up temp file
+      require('fs').unlinkSync('temp-normal-inquiries.csv');
+    });
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Export failed'
     });
   }
 });

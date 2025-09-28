@@ -6,7 +6,9 @@ import {
   ChevronLeft, 
   ChevronRight,
   Mail,
+  User,
   Send,
+  Plus,
   CheckCircle,
   XCircle,
   AlertCircle

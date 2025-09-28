@@ -8,26 +8,28 @@ const auth = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Access denied. No token provided.'
+        message: 'No token, authorization denied'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const admin = await Admin.findById(decoded.id).select('-password');
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
     
+    const admin = await Admin.findById(decoded.adminId);
     if (!admin || !admin.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token or admin not found.'
+        message: 'Token is not valid'
       });
     }
 
-    req.admin = admin;
+    req.adminId = admin._id;
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     res.status(401).json({
       success: false,
-      message: 'Invalid token.'
+      message: 'Token is not valid'
     });
   }
 };

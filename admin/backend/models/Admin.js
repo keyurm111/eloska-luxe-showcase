@@ -2,22 +2,24 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const adminSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
   email: {
     type: String,
     required: true,
     unique: true,
+    trim: true,
     lowercase: true,
-    trim: true
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
   password: {
     type: String,
     required: true,
     minlength: 6
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
   },
   role: {
     type: String,
@@ -51,6 +53,13 @@ adminSchema.pre('save', async function(next) {
 // Compare password method
 adminSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Remove password from JSON output
+adminSchema.methods.toJSON = function() {
+  const admin = this.toObject();
+  delete admin.password;
+  return admin;
 };
 
 module.exports = mongoose.model('Admin', adminSchema);

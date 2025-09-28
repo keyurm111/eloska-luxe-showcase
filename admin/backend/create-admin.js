@@ -6,33 +6,34 @@ const createAdmin = async () => {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eloska-admin');
-    console.log('✅ Connected to MongoDB');
+    console.log('Connected to MongoDB');
 
     // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
+    const existingAdmin = await Admin.findOne({ email: 'admin@eloska.com' });
     if (existingAdmin) {
-      console.log('⚠️ Admin already exists:', existingAdmin.email);
-      return;
+      console.log('Admin user already exists:', existingAdmin.email);
+      process.exit(0);
     }
 
-    // Create new admin
+    // Create admin user
     const admin = new Admin({
-      name: process.env.ADMIN_NAME || 'Eloska Admin',
-      email: process.env.ADMIN_EMAIL || 'admin@eloska.com',
-      password: process.env.ADMIN_PASSWORD || 'admin123',
-      role: 'super_admin'
+      name: 'Admin User',
+      email: 'admin@eloska.com',
+      password: 'admin123', // This will be hashed by the model
+      isActive: true
     });
 
     await admin.save();
-    console.log('✅ Admin created successfully:', admin.email);
-    console.log('📧 Email:', admin.email);
-    console.log('🔑 Password:', process.env.ADMIN_PASSWORD || 'admin123');
+    console.log('Admin user created successfully:', admin.email);
+    console.log('You can now login with:');
+    console.log('Email: admin@eloska.com');
+    console.log('Password: admin123');
     
   } catch (error) {
-    console.error('❌ Error creating admin:', error);
+    console.error('Error creating admin:', error);
   } finally {
     await mongoose.disconnect();
-    console.log('🔌 Disconnected from MongoDB');
+    process.exit(0);
   }
 };
 

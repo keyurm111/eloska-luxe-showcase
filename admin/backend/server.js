@@ -1,267 +1,108 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5004;
 
-// Trust proxy for Render - MUST be set before any middleware
-app.set('trust proxy', true);
+// Security middleware
+app.use(helmet());
+app.use(compression()); // Enable gzip compression
+app.use(cors({
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3001',
+    'http://localhost:5173', // Vite dev server (main website)
+    'http://localhost:8080', // Alternative Vite dev server port
+    'http://localhost:3000'  // Alternative React dev server
+  ],
+  credentials: true
+}));
 
-// Middleware
-app.use(express.json());
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api/', limiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// CORS Configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:5173',
-      'http://localhost:8080',
-      'http://localhost:8081',
-      'http://localhost:8082',
-      'http://localhost:8083',
-      'https://eloska-luxe-showcase.onrender.com',
-      'https://eloska-admin.onrender.com'
-    ];
-    
-    console.log('🌐 CORS Request from origin:', origin);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('✅ CORS: Origin allowed');
-      callback(null, true);
-    } else {
-      console.log('❌ CORS: Origin blocked:', origin);
-      callback(new Error('Not allowed by CORS'));
+// Performance monitoring middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 1000) { // Log slow requests (>1s)
+      console.log(`🐌 Slow request: ${req.method} ${req.path} - ${duration}ms`);
+    } else if (duration > 500) { // Log medium requests (>500ms)
+      console.log(`⚡ Request: ${req.method} ${req.path} - ${duration}ms`);
     }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
-};
+  });
+  next();
+});
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eloska-admin')
+.then(() => console.log('✅ MongoDB connected successfully'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/product-inquiries', require('./routes/productInquiries'));
+app.use('/api/normal-inquiries', require('./routes/normalInquiries'));
+app.use('/api/newsletter', require('./routes/newsletter'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  res.status(200).json({
-    success: true,
-    status: 'OK',
-    message: 'Eloska Backend API is running on Render',
+  res.json({ 
+    status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'production',
-    uptime: process.uptime(),
-    port: PORT,
-    trustProxy: app.get('trust proxy')
+    uptime: process.uptime()
   });
 });
 
-// Verify token endpoint
-app.get('/api/auth/verify', (req, res) => {
+// Test email endpoint
+app.post('/api/test-email', async (req, res) => {
   try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
+    const emailService = require('./services/emailService');
+    const result = await emailService.testEmailConfiguration();
     
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (token) {
-      console.log('✅ Token verification successful');
+    if (result.success) {
       res.json({
         success: true,
-        message: 'Token is valid',
-        data: {
-          admin: {
-            id: 'admin-123',
-            name: 'Eloska Admin',
-            email: 'admin@eloska.com',
-            role: 'admin'
-          }
-        }
+        message: 'Test email sent successfully',
+        messageId: result.messageId
       });
     } else {
-      res.status(401).json({
+      res.status(500).json({
         success: false,
-        message: 'No token provided'
+        message: 'Failed to send test email',
+        error: result.error
       });
     }
   } catch (error) {
-    console.error('Token verification error:', error);
-    res.status(401).json({
-      success: false,
-      message: 'Invalid token'
-    });
-  }
-});
-
-// Login endpoint
-app.post('/api/auth/login', (req, res) => {
-  try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    const { email, password } = req.body;
-    console.log('Login attempt:', { email, password: password ? '***' : 'undefined' });
-    
-    // Hardcoded admin credentials for testing
-    if (email === 'admin@eloska.com' && password === 'admin123') {
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiYWRtaW4tMTIzIiwiZW1haWwiOiJhZG1pbkBlbG9za2EuY29tIiwiaWF0IjoxNzU5MDcyMDAwLCJleHAiOjE3NTk2NzY4MDB9.test-token';
-      
-      console.log('✅ Login successful for:', email);
-      res.json({
-        success: true,
-        message: 'Login successful',
-        data: {
-          token: token,
-          admin: {
-            id: 'admin-123',
-            name: 'Eloska Admin',
-            email: 'admin@eloska.com',
-            role: 'admin'
-          }
-        }
-      });
-    } else {
-      console.log('❌ Login failed: Invalid credentials for:', email);
-      res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
-    }
-  } catch (error) {
-    console.error('Login error:', error);
+    console.error('Test email error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Test email failed',
+      error: error.message
     });
   }
 });
 
-// Product inquiries endpoint
-app.post('/api/product-inquiries/submit', (req, res) => {
-  try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    console.log('Product inquiry received:', req.body);
-    
-    res.status(201).json({
-      success: true,
-      message: 'Product inquiry submitted successfully',
-      data: {
-        id: 'inquiry-' + Date.now(),
-        status: 'pending'
-      }
-    });
-  } catch (error) {
-    console.error('Product inquiry error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
-
-// Normal inquiries endpoint
-app.post('/api/normal-inquiries/submit', (req, res) => {
-  try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    console.log('Normal inquiry received:', req.body);
-    
-    res.status(201).json({
-      success: true,
-      message: 'Inquiry submitted successfully',
-      data: {
-        id: 'inquiry-' + Date.now(),
-        status: 'pending'
-      }
-    });
-  } catch (error) {
-    console.error('Normal inquiry error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
-
-// Newsletter endpoint
-app.post('/api/newsletter/subscribe', (req, res) => {
-  try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    console.log('Newsletter subscription received:', req.body);
-    
-    res.status(201).json({
-      success: true,
-      message: 'Successfully subscribed to newsletter'
-    });
-  } catch (error) {
-    console.error('Newsletter subscription error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
-
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Eloska Backend API - Final Render Version',
-    version: '1.0.0',
-    environment: 'production',
-    trustProxy: app.get('trust proxy'),
-    endpoints: {
-      health: '/api/health',
-      login: '/api/auth/login',
-      verify: '/api/auth/verify',
-      productInquiries: '/api/product-inquiries/submit',
-      normalInquiries: '/api/normal-inquiries/submit',
-      newsletter: '/api/newsletter/subscribe'
-    }
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
@@ -269,29 +110,15 @@ app.get('/', (req, res) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'API endpoint not found',
-    path: req.originalUrl,
-    method: req.method
-  });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: 'Route not found'
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Final Render Server running on port ${PORT}`);
-  console.log(`🔗 Health check: https://eloska-backend.onrender.com/api/health`);
-  console.log(`🔐 Login test: https://eloska-backend.onrender.com/api/auth/login`);
-  console.log(`🌐 CORS enabled for: https://eloska-admin.onrender.com`);
-  console.log(`📧 Login credentials: admin@eloska.com / admin123`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
-  console.log(`🔒 Trust proxy: ${app.get('trust proxy')}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Admin panel: http://localhost:${PORT}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 });
+
+module.exports = app;

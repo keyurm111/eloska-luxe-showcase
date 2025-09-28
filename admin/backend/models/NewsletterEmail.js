@@ -5,8 +5,9 @@ const newsletterEmailSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    trim: true,
     lowercase: true,
-    trim: true
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
   status: {
     type: String,
@@ -27,10 +28,16 @@ const newsletterEmailSchema = new mongoose.Schema({
   },
   tags: [{
     type: String,
-    trim: true
+    trim: true,
+    maxlength: 50
   }]
 }, {
   timestamps: true
 });
+
+// Indexes for better query performance
+newsletterEmailSchema.index({ status: 1 });
+newsletterEmailSchema.index({ subscribedAt: -1 });
+newsletterEmailSchema.index({ source: 1 });
 
 module.exports = mongoose.model('NewsletterEmail', newsletterEmailSchema);
