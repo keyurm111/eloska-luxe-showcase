@@ -71,9 +71,12 @@ const Contact = () => {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api';
       console.log('Making request to:', `${API_BASE_URL}/normal-inquiries/submit`);
       
-      // Create AbortController for timeout
+      // Create AbortController for timeout (increased to 30 seconds for Render)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => {
+        console.log('Request timeout after 30 seconds');
+        controller.abort();
+      }, 30000); // 30 second timeout for Render cold starts
 
       const response = await fetch(`${API_BASE_URL}/normal-inquiries/submit`, {
         method: 'POST',
