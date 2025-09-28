@@ -17,7 +17,8 @@ app.use(cors({
     process.env.FRONTEND_URL || 'http://localhost:3001',
     'http://localhost:5173', // Vite dev server (main website)
     'http://localhost:8080', // Alternative Vite dev server port
-    'http://localhost:3000'  // Alternative React dev server
+    'http://localhost:3000',
+    'https://eloska-admin.onrender.com'  // Alternative React dev server
   ],
   credentials: true
 }));
