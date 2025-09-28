@@ -5,10 +5,7 @@ import {
   Eye, 
   Trash2, 
   ChevronLeft, 
-  ChevronRight,
-  Mail,
-  User,
-  MessageSquare
+  ChevronRight
 } from 'lucide-react';
 import { normalInquiryApi } from '../services/api';
 import { NormalInquiry, FilterOptions } from '../types';
