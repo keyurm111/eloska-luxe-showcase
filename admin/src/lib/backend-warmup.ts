@@ -14,7 +14,7 @@ class BackendWarmup {
     responseTime: 0
   };
 
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private readonly API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5004/api';
   private readonly CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 

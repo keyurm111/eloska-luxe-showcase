@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getBackendStatus, isBackendReady } from '@/lib/backend-warmup';
+import { getBackendStatus } from '@/lib/backend-warmup';
 
 const BackendStatusIndicator = () => {
   const [status, setStatus] = useState(getBackendStatus());
