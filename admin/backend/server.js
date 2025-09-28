@@ -14,7 +14,7 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS Configuration
+// CORS Configuration - Production Ready
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -48,6 +48,7 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Apply CORS
 app.use(cors(corsOptions));
 
 // Handle preflight requests explicitly
@@ -73,16 +74,20 @@ app.use('/api/product-inquiries', require('./routes/productInquiries'));
 app.use('/api/normal-inquiries', require('./routes/normalInquiries'));
 app.use('/api/newsletter', require('./routes/newsletter'));
 
-// Health check endpoint
+// Health check endpoint with explicit CORS headers
 app.get('/api/health', (req, res) => {
   // Set CORS headers explicitly
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Allow-Credentials', 'true');
   
   res.status(200).json({
     success: true,
+    status: 'OK',
     message: 'Eloska Backend API is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
@@ -128,13 +133,13 @@ app.use((err, req, res, next) => {
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eloska-admin')
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+.then(() => console.log('✅ MongoDB connected successfully'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Admin panel: http://localhost:${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🌐 CORS enabled for: ${corsOptions.origin.join(', ')}`);
+  console.log(`🌐 CORS enabled for: https://eloska-admin.onrender.com`);
 });
