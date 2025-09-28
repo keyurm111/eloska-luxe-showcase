@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5004;
@@ -62,48 +63,6 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     uptime: process.uptime()
   });
-});
-
-// Verify token endpoint
-app.get('/api/auth/verify', (req, res) => {
-  try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (token) {
-      console.log('✅ Token verification successful');
-      res.json({
-        success: true,
-        message: 'Token is valid',
-        data: {
-          admin: {
-            id: 'admin-123',
-            name: 'Eloska Admin',
-            email: 'admin@eloska.com',
-            role: 'admin'
-          }
-        }
-      });
-    } else {
-      res.status(401).json({
-        success: false,
-        message: 'No token provided'
-      });
-    }
-  } catch (error) {
-    console.error('Token verification error:', error);
-    res.status(401).json({
-      success: false,
-      message: 'Invalid token'
-    });
-  }
 });
 
 // Login endpoint
@@ -244,12 +203,11 @@ app.post('/api/newsletter/subscribe', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Eloska Backend API - Minimal Final Version',
+    message: 'Eloska Backend API - Clean Version',
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
       login: '/api/auth/login',
-      verify: '/api/auth/verify',
       productInquiries: '/api/product-inquiries/submit',
       normalInquiries: '/api/normal-inquiries/submit',
       newsletter: '/api/newsletter/subscribe'
@@ -279,7 +237,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Minimal Final Server running on port ${PORT}`);
+  console.log(`🚀 Clean Server running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🔐 Login test: http://localhost:${PORT}/api/auth/login`);
   console.log(`🌐 CORS enabled for: https://eloska-admin.onrender.com`);
