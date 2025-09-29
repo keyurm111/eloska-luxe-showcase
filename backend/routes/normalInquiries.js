@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const NormalInquiry = require('../models/NormalInquiry');
-const auth = require('../middleware/auth');
+// const auth = require('../middleware/auth'); // Removed - no authentication needed
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const emailService = require('../services/emailService');
 
@@ -72,8 +72,7 @@ router.post('/submit', [
   }
 });
 
-// Apply auth middleware to all other routes
-router.use(auth);
+// Auth middleware removed - admin panel now works without authentication
 
 // @route   GET /api/normal-inquiries
 // @desc    Get all normal inquiries with pagination and filters

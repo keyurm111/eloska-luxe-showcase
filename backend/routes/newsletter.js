@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const NewsletterEmail = require('../models/NewsletterEmail');
-const auth = require('../middleware/auth');
+// const auth = require('../middleware/auth'); // Removed - no authentication needed
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const nodemailer = require('nodemailer');
 const emailService = require('../services/emailService');
@@ -80,8 +80,7 @@ router.post('/subscribe', [
   }
 });
 
-// Apply auth middleware to all other routes
-router.use(auth);
+// Auth middleware removed - admin panel now works without authentication
 
 // @route   GET /api/newsletter
 // @desc    Get all newsletter emails with pagination and filters
