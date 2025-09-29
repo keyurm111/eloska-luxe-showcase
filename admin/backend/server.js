@@ -12,13 +12,24 @@ const PORT = process.env.PORT || 5004;
 // Security middleware
 app.use(helmet());
 app.use(compression()); // Enable gzip compression
+// Configure CORS with environment variables
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3001',
+  process.env.CLIENT_URL || 'http://localhost:8084',
+  process.env.ADMIN_CLIENT_URL || 'http://localhost:3003',
+  'http://localhost:5173', // Vite dev server (main website)
+  'http://localhost:8080', // Alternative Vite dev server port
+  'http://localhost:3000'  // Alternative React dev server
+];
+
+// Add additional origins from environment variable if provided
+if (process.env.ALLOWED_ORIGINS) {
+  const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',');
+  allowedOrigins.push(...additionalOrigins);
+}
+
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3001',
-    'http://localhost:5173', // Vite dev server (main website)
-    'http://localhost:8080', // Alternative Vite dev server port
-    'http://localhost:3000'  // Alternative React dev server
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
 

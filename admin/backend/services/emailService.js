@@ -7,6 +7,14 @@ const createTransporter = () => {
     throw new Error('Email configuration not found. Please set SMTP_USER and SMTP_PASS environment variables.');
   }
 
+  // Debug logging
+  console.log('📧 Email Configuration Debug:');
+  console.log('SMTP_HOST:', process.env.SMTP_HOST || 'smtp.gmail.com');
+  console.log('SMTP_PORT:', process.env.SMTP_PORT || 587);
+  console.log('SMTP_USER:', process.env.SMTP_USER);
+  console.log('SMTP_PASS length:', process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 'undefined');
+  console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL);
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
