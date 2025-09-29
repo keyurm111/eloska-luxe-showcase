@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 
-// Create transporter
+// Create transporter with fallback options
 const createTransporter = () => {
   // Check if email configuration is available
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -15,28 +15,46 @@ const createTransporter = () => {
   console.log('SMTP_PASS length:', process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 'undefined');
   console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL);
 
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
+  // Try different configurations for better Render compatibility
+  const configs = [
+    // Configuration 1: Standard Gmail SMTP
+    {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
+      pool: false,
+      tls: {
+        rejectUnauthorized: false
+      }
     },
-    // Production timeout settings
-    connectionTimeout: 60000, // 60 seconds
-    greetingTimeout: 30000,   // 30 seconds
-    socketTimeout: 60000,     // 60 seconds
-    // Retry settings
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    rateLimit: 10, // max 10 messages per second
-    // TLS settings for production
-    tls: {
-      rejectUnauthorized: false
+    // Configuration 2: Alternative Gmail SMTP
+    {
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
+      pool: false,
+      tls: {
+        rejectUnauthorized: false
+      }
     }
-  });
+  ];
+
+  // Return the first configuration (will try others in email functions)
+  return nodemailer.createTransport(configs[0]);
 };
 
 // Email templates
@@ -218,39 +236,80 @@ const emailTemplates = {
 const emailService = {
   // Send product inquiry notification
   sendProductInquiryNotification: async (inquiry) => {
-    try {
-      const transporter = createTransporter();
-      
-      const mailOptions = {
-        from: `"Eloska Luxe Showcase" <${process.env.SMTP_USER}>`,
-        to: process.env.ADMIN_EMAIL || 'admin@eloska.com',
-        subject: `New Product Inquiry - ${inquiry.productName}`,
-        html: emailTemplates.productInquiry(inquiry)
-      };
+    const mailOptions = {
+      from: `"Eloska Luxe Showcase" <${process.env.SMTP_USER}>`,
+      to: process.env.ADMIN_EMAIL || process.env.SMTP_USER,
+      subject: `New Product Inquiry - ${inquiry.productName}`,
+      html: emailTemplates.productInquiry(inquiry)
+    };
 
-      // Add timeout wrapper
-      const sendWithTimeout = (transporter, mailOptions) => {
-        return Promise.race([
-          transporter.sendMail(mailOptions),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Email timeout')), 30000)
-          )
-        ]);
-      };
+    // Try multiple SMTP configurations
+    const configs = [
+      // Configuration 1: Standard Gmail SMTP
+      {
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000,
+        pool: false,
+        tls: { rejectUnauthorized: false }
+      },
+      // Configuration 2: Alternative Gmail SMTP
+      {
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000,
+        pool: false,
+        tls: { rejectUnauthorized: false }
+      }
+    ];
 
-      const result = await sendWithTimeout(transporter, mailOptions);
-      console.log('✅ Product inquiry notification sent:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Failed to send product inquiry notification:', error);
-      // Log to console as fallback
-      console.log('📧 FALLBACK: Product Inquiry Details:');
-      console.log('Name:', inquiry.name);
-      console.log('Email:', inquiry.email);
-      console.log('Phone:', inquiry.phone);
-      console.log('Product:', inquiry.productName);
-      console.log('Message:', inquiry.message);
-      return { success: false, error: error.message };
+    for (let i = 0; i < configs.length; i++) {
+      try {
+        console.log(`📧 Trying email configuration ${i + 1}...`);
+        const transporter = nodemailer.createTransport(configs[i]);
+        
+        // Add timeout wrapper
+        const sendWithTimeout = (transporter, mailOptions) => {
+          return Promise.race([
+            transporter.sendMail(mailOptions),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Email timeout')), 10000)
+            )
+          ]);
+        };
+
+        const result = await sendWithTimeout(transporter, mailOptions);
+        console.log(`✅ Product inquiry notification sent with config ${i + 1}:`, result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log(`❌ Email config ${i + 1} failed:`, error.message);
+        if (i === configs.length - 1) {
+          // All configurations failed
+          console.error('❌ All email configurations failed');
+          // Log to console as fallback
+          console.log('📧 FALLBACK: Product Inquiry Details:');
+          console.log('Name:', inquiry.name);
+          console.log('Email:', inquiry.email);
+          console.log('Phone:', inquiry.phone);
+          console.log('Product:', inquiry.productName);
+          console.log('Message:', inquiry.message);
+          return { success: false, error: error.message };
+        }
+      }
     }
   },
 
