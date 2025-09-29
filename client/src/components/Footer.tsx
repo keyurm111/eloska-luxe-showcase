@@ -20,7 +20,7 @@ const Footer = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/newsletter/subscribe`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://eloska-backend.onrender.com'}/api/newsletter/subscribe`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

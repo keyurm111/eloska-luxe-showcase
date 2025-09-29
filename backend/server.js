@@ -20,6 +20,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3001',
   process.env.CLIENT_URL || 'http://localhost:8084',
   process.env.ADMIN_CLIENT_URL || 'http://localhost:3003',
+  'https://eloska.onrender.com',
+  'https://eloska-admin.onrender.com',
   'http://localhost:5173', // Vite dev server (main website)
   'http://localhost:8080', // Alternative Vite dev server port
   'http://localhost:3000'  // Alternative React dev server

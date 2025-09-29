@@ -3409,7 +3409,7 @@ const Products = () => {
       };
       
       console.log('Request data:', requestData);
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/product-inquiries/submit`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://eloska-backend.onrender.com'}/api/product-inquiries/submit`;
       console.log('Making request to:', apiUrl);
       
       // Create AbortController for timeout

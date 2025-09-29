@@ -68,7 +68,7 @@ const Contact = () => {
     console.log('Submitting contact form:', formData);
     
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/normal-inquiries/submit`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://eloska-backend.onrender.com'}/api/normal-inquiries/submit`;
       console.log('Making request to:', apiUrl);
       
       // Create AbortController for timeout
