@@ -14,6 +14,7 @@ const createTransporter = () => {
   console.log('SMTP_PORT:', process.env.SMTP_PORT || 587);
   console.log('SMTP_USER:', process.env.SMTP_USER);
   console.log('SMTP_PASS length:', process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 'undefined');
+  console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL);
   console.log('NOTIFICATION_EMAIL:', process.env.NOTIFICATION_EMAIL);
 
   // Try different configurations for better Render compatibility
