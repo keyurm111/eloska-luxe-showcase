@@ -1,67 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useState, useEffect } from 'react';
 import Layout from './components/Layout';
-import Login from './pages/Login';
 import ProductInquiries from './pages/ProductInquiries';
 import NormalInquiries from './pages/NormalInquiries';
 import Newsletter from './pages/Newsletter';
-import { authApi } from './services/api';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('adminToken');
-      
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-
-      try {
-        await authApi.verifyToken();
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Token verification error:', error);
-        localStorage.removeItem('adminToken');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const handleLogin = (token: string) => {
-    localStorage.setItem('adminToken', token);
-    setIsAuthenticated(true);
-  };
-
+  // Removed authentication - admin panel opens directly
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    setIsAuthenticated(false);
+    // No logout needed since there's no authentication
+    console.log('Logout clicked - but no authentication required');
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Login onLogin={handleLogin} />
-        <Toaster position="top-right" />
-      </>
-    );
-  }
 
   return (
     <Router>

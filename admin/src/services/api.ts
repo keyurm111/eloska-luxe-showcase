@@ -18,13 +18,10 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for auth token
+// Request interceptor (no authentication needed)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // No authentication headers needed
     return config;
   },
   (error) => {
@@ -36,10 +33,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
-      window.location.href = '/login';
-    }
+    // No authentication error handling needed
     return Promise.reject(error);
   }
 );
@@ -124,16 +118,6 @@ export const newsletterApi = {
     api.post('/newsletter/send', { subject, content, recipients }).then(res => res.data),
 };
 
-// Auth API
-export const authApi = {
-  login: (email: string, password: string): Promise<ApiResponse<{ token: string; admin: any }>> =>
-    api.post('/auth/login', { email, password }).then(res => res.data),
-
-  logout: (): Promise<ApiResponse<void>> =>
-    api.post('/auth/logout').then(res => res.data),
-
-  verifyToken: (): Promise<ApiResponse<any>> =>
-    api.get('/auth/verify').then(res => res.data),
-};
+// Auth API removed - no authentication needed
 
 export default api;

@@ -13,7 +13,7 @@ import {
 
 interface LayoutProps {
   children: React.ReactNode;
-  onLogout: () => void;
+  onLogout?: () => void;
 }
 
 const Layout = ({ children, onLogout }: LayoutProps) => {
@@ -123,13 +123,15 @@ const Layout = ({ children, onLogout }: LayoutProps) => {
               >
                 <Settings className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-x-1 sm:gap-x-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-gray-900 px-2 py-1 rounded-md hover:bg-gray-100"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-x-1 sm:gap-x-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-gray-900 px-2 py-1 rounded-md hover:bg-gray-100"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
