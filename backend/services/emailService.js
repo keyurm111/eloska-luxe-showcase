@@ -59,27 +59,29 @@ const createTransporter = () => {
   return nodemailer.createTransport(configs[0]);
 };
 
-// Alternative email service using HTTP request (for Render)
-const sendEmailViaHTTP = async (mailOptions) => {
+// Alternative email service using SendGrid API (for Render)
+const sendEmailViaSendGrid = async (mailOptions) => {
   return new Promise((resolve, reject) => {
-    // Use a simple HTTP service that works on Render
+    // Use SendGrid API as a reliable fallback
     const postData = JSON.stringify({
-      to: mailOptions.to,
-      from: mailOptions.from,
-      subject: mailOptions.subject,
-      html: mailOptions.html,
-      // Add your email service credentials here if needed
-      service: 'gmail',
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
+      personalizations: [{
+        to: [{ email: mailOptions.to }],
+        subject: mailOptions.subject
+      }],
+      from: { email: mailOptions.from },
+      content: [{
+        type: 'text/html',
+        value: mailOptions.html
+      }]
     });
 
     const options = {
-      hostname: 'api.emailjs.com',
+      hostname: 'api.sendgrid.com',
       port: 443,
-      path: '/api/v1.0/email/send',
+      path: '/v3/mail/send',
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(postData)
       }
@@ -91,10 +93,10 @@ const sendEmailViaHTTP = async (mailOptions) => {
         data += chunk;
       });
       res.on('end', () => {
-        if (res.statusCode === 200) {
-          resolve({ success: true, messageId: 'http-' + Date.now() });
+        if (res.statusCode === 202) {
+          resolve({ success: true, messageId: 'sendgrid-' + Date.now() });
         } else {
-          reject(new Error(`HTTP email failed: ${res.statusCode}`));
+          reject(new Error(`SendGrid email failed: ${res.statusCode} - ${data}`));
         }
       });
     });
@@ -104,6 +106,46 @@ const sendEmailViaHTTP = async (mailOptions) => {
     });
 
     req.write(postData);
+    req.end();
+  });
+};
+
+// Alternative email service using Mailgun API (for Render)
+const sendEmailViaMailgun = async (mailOptions) => {
+  return new Promise((resolve, reject) => {
+    const formData = `from=${encodeURIComponent(mailOptions.from)}&to=${encodeURIComponent(mailOptions.to)}&subject=${encodeURIComponent(mailOptions.subject)}&html=${encodeURIComponent(mailOptions.html)}`;
+    
+    const options = {
+      hostname: 'api.mailgun.net',
+      port: 443,
+      path: `/v3/${process.env.MAILGUN_DOMAIN}/messages`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(formData)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          resolve({ success: true, messageId: 'mailgun-' + Date.now() });
+        } else {
+          reject(new Error(`Mailgun email failed: ${res.statusCode} - ${data}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.write(formData);
     req.end();
   });
 };
@@ -312,9 +354,9 @@ const emailService = {
       html: emailTemplates.productInquiry(inquiry)
     };
 
-    // Try multiple SMTP configurations
+    // Try multiple SMTP configurations optimized for Render
     const configs = [
-      // Configuration 1: Standard Gmail SMTP
+      // Configuration 1: Gmail SMTP with Render optimizations
       {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: 587,
@@ -323,13 +365,18 @@ const emailService = {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 5000,
-        socketTimeout: 10000,
+        connectionTimeout: 30000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
         pool: false,
-        tls: { rejectUnauthorized: false }
+        tls: { 
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
+        },
+        debug: false,
+        logger: false
       },
-      // Configuration 2: Alternative Gmail SMTP
+      // Configuration 2: Gmail SMTP with SSL
       {
         host: 'smtp.gmail.com',
         port: 465,
@@ -338,11 +385,35 @@ const emailService = {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 5000,
-        socketTimeout: 10000,
+        connectionTimeout: 30000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
         pool: false,
-        tls: { rejectUnauthorized: false }
+        tls: { 
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
+        },
+        debug: false,
+        logger: false
+      },
+      // Configuration 3: Alternative Gmail SMTP
+      {
+        host: 'smtp.gmail.com',
+        port: 25,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        connectionTimeout: 30000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
+        pool: false,
+        tls: { 
+          rejectUnauthorized: false
+        },
+        debug: false,
+        logger: false
       }
     ];
 
@@ -370,14 +441,28 @@ const emailService = {
       }
     }
 
-    // Try HTTP approach as fallback
-    try {
-      console.log('📧 Trying HTTP email service...');
-      const result = await sendEmailViaHTTP(mailOptions);
-      console.log('✅ Product inquiry notification sent via HTTP:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.log('❌ HTTP email failed:', error.message);
+    // Try SendGrid as fallback
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        console.log('📧 Trying SendGrid email service...');
+        const result = await sendEmailViaSendGrid(mailOptions);
+        console.log('✅ Product inquiry notification sent via SendGrid:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log('❌ SendGrid email failed:', error.message);
+      }
+    }
+
+    // Try Mailgun as fallback
+    if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) {
+      try {
+        console.log('📧 Trying Mailgun email service...');
+        const result = await sendEmailViaMailgun(mailOptions);
+        console.log('✅ Product inquiry notification sent via Mailgun:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log('❌ Mailgun email failed:', error.message);
+      }
     }
 
     // Final fallback - log to console (always works)
@@ -405,13 +490,28 @@ const emailService = {
       console.log('❌ SMTP failed, trying alternatives...');
     }
 
-    // Try HTTP approach
-    try {
-      const result = await sendEmailViaHTTP(mailOptions);
-      console.log('✅ Normal inquiry notification sent via HTTP:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.log('❌ HTTP email failed, using console logging...');
+    // Try SendGrid as fallback
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        console.log('📧 Trying SendGrid email service...');
+        const result = await sendEmailViaSendGrid(mailOptions);
+        console.log('✅ Normal inquiry notification sent via SendGrid:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log('❌ SendGrid email failed:', error.message);
+      }
+    }
+
+    // Try Mailgun as fallback
+    if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) {
+      try {
+        console.log('📧 Trying Mailgun email service...');
+        const result = await sendEmailViaMailgun(mailOptions);
+        console.log('✅ Normal inquiry notification sent via Mailgun:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log('❌ Mailgun email failed:', error.message);
+      }
     }
 
     // Final fallback - console logging
@@ -438,13 +538,28 @@ const emailService = {
       console.log('❌ SMTP failed, trying alternatives...');
     }
 
-    // Try HTTP approach
-    try {
-      const result = await sendEmailViaHTTP(mailOptions);
-      console.log('✅ Newsletter subscription notification sent via HTTP:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.log('❌ HTTP email failed, using console logging...');
+    // Try SendGrid as fallback
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        console.log('📧 Trying SendGrid email service...');
+        const result = await sendEmailViaSendGrid(mailOptions);
+        console.log('✅ Newsletter subscription notification sent via SendGrid:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log('❌ SendGrid email failed:', error.message);
+      }
+    }
+
+    // Try Mailgun as fallback
+    if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) {
+      try {
+        console.log('📧 Trying Mailgun email service...');
+        const result = await sendEmailViaMailgun(mailOptions);
+        console.log('✅ Newsletter subscription notification sent via Mailgun:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.log('❌ Mailgun email failed:', error.message);
+      }
     }
 
     // Final fallback - console logging
