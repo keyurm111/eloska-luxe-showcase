@@ -139,7 +139,7 @@ const NewArrivalsSection = () => {
   );
 
   return (
-    <section ref={newArrivalsRef} className="py-12 sm:py-16 lg:py-20 bg-background w-full">
+    <section id="new-arrivals" ref={newArrivalsRef} className="py-12 sm:py-16 lg:py-20 bg-background w-full">
       <div className="container mx-auto px-6 sm:px-8 lg:px-12">
         {/* Section Header */}
         <div className={`text-center mb-12 sm:mb-16 transition-all duration-1000 ${
@@ -449,7 +449,7 @@ const ProductCarousel = () => {
       desc: 'Exquisite mirrors crafted with precision and elegance. From classic silver designs to contemporary artistic masterpieces.',
       image: mirrorsImage,
       angle: 4,
-      href: '/products/mirrors'
+      href: '/products/regular-silver' // First category: Regular Silver Mirrors
     },
     {
       name: 'Luxury Scarfs',
@@ -457,7 +457,7 @@ const ProductCarousel = () => {
       desc: 'Premium silk and cotton scarfs featuring intricate patterns. Handcrafted with attention to detail and luxury finishing.',
       image: scarfsImage,
       angle: -8,
-      href: '/products/scarfs'
+      href: '/products/bandhani' // First category: Bandhani Scarf
     },
     {
       name: 'Bag Fabrics',
@@ -465,7 +465,7 @@ const ProductCarousel = () => {
       desc: 'Durable and stylish fabrics designed for all bag types. High-quality materials that combine functionality with fashion.',
       image: bagFabricImage,
       angle: 16,
-      href: '/products/bag-fabric'
+      href: '/products/digital' // First category: Digital Print Fabric
     }
   ];
 
@@ -556,6 +556,17 @@ const Home = () => {
     title: "Home - Eloska World | Luxury Manufacturing Excellence",
     description: "Discover premium manufacturing excellence with Eloska World. Explore our luxury collections of Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, Sari Mirrors and more."
   });
+
+  // Function to scroll to New Arrivals section
+  const scrollToNewArrivals = () => {
+    const element = document.getElementById('new-arrivals');
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
   
   // Scroll animation hooks for different sections
   const [heroRef, heroVisible] = useScrollAnimation();
@@ -622,7 +633,11 @@ const Home = () => {
               Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, and Sari Mirrors
             </p>
             <div className="transition-all duration-1000 delay-300">
-              <Button size="lg" className="bg-primary hover:bg-primary-glow text-white shadow-luxury transition-luxury group w-full sm:w-auto">
+              <Button 
+                size="lg" 
+                onClick={scrollToNewArrivals}
+                className="bg-primary hover:bg-primary-glow text-white shadow-luxury transition-luxury group w-full sm:w-auto"
+              >
                 Explore Our Collection
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
