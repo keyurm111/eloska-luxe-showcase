@@ -17,6 +17,9 @@ build/
 .next/
 out/
 
+# Vite
+.vite/
+
 # IDE and editor files
 .vscode/
 .idea/

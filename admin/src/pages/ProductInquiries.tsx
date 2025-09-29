@@ -1,21 +1,15 @@
 import { useState, useEffect } from 'react';
 import { 
   Search, 
-  Filter, 
   Download, 
   Eye, 
-  Edit, 
   Trash2, 
   ChevronLeft, 
-  ChevronRight,
-  Calendar,
-  User,
-  Package,
-  MessageSquare
+  ChevronRight
 } from 'lucide-react';
 import { productInquiryApi } from '../services/api';
-import { ProductInquiry, FilterOptions, PaginatedResponse } from '../types';
-import { formatDate, getStatusColor, getStatusText, truncateText, downloadFile } from '../lib/utils';
+import { ProductInquiry, FilterOptions } from '../types';
+import { formatDate, getStatusColor, downloadFile } from '../lib/utils';
 import toast from 'react-hot-toast';
 
 const ProductInquiries = () => {

@@ -68,3 +68,12 @@ export interface SortOptions {
   field: string;
   order: 'asc' | 'desc';
 }
+
+export interface DashboardStats {
+  totalProductInquiries: number;
+  totalNormalInquiries: number;
+  totalNewsletterSubscribers: number;
+  pendingInquiries: number;
+  completedInquiries: number;
+  recentInquiries: ProductInquiry[];
+}
