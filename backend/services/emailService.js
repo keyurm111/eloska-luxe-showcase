@@ -22,6 +22,19 @@ const createTransporter = () => {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
+    },
+    // Production timeout settings
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,   // 30 seconds
+    socketTimeout: 60000,     // 60 seconds
+    // Retry settings
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateLimit: 10, // max 10 messages per second
+    // TLS settings for production
+    tls: {
+      rejectUnauthorized: false
     }
   });
 };
@@ -215,11 +228,28 @@ const emailService = {
         html: emailTemplates.productInquiry(inquiry)
       };
 
-      const result = await transporter.sendMail(mailOptions);
+      // Add timeout wrapper
+      const sendWithTimeout = (transporter, mailOptions) => {
+        return Promise.race([
+          transporter.sendMail(mailOptions),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Email timeout')), 30000)
+          )
+        ]);
+      };
+
+      const result = await sendWithTimeout(transporter, mailOptions);
       console.log('✅ Product inquiry notification sent:', result.messageId);
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('❌ Failed to send product inquiry notification:', error);
+      // Log to console as fallback
+      console.log('📧 FALLBACK: Product Inquiry Details:');
+      console.log('Name:', inquiry.name);
+      console.log('Email:', inquiry.email);
+      console.log('Phone:', inquiry.phone);
+      console.log('Product:', inquiry.productName);
+      console.log('Message:', inquiry.message);
       return { success: false, error: error.message };
     }
   },

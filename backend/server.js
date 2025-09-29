@@ -9,6 +9,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5004;
 
+// Trust proxy for production (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(compression()); // Enable gzip compression
@@ -26,6 +29,16 @@ const allowedOrigins = [
 if (process.env.ALLOWED_ORIGINS) {
   const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',');
   allowedOrigins.push(...additionalOrigins);
+}
+
+// Add production URLs if they exist
+if (process.env.NODE_ENV === 'production') {
+  // Add common production patterns
+  allowedOrigins.push(
+    'https://*.render.com',
+    'https://*.vercel.app',
+    'https://*.netlify.app'
+  );
 }
 
 app.use(cors({
