@@ -363,13 +363,22 @@ const Products = () => {
           <div className="text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-playfair font-bold mb-6">
               {category ? (
-                <>
-                  <span className="text-black">{getCategoryMapping(category)?.displayName || 'Products'}</span>
-                </>
+                (() => {
+                  const categoryName = getCategoryMapping(category)?.displayName || 'Products';
+                  const words = categoryName.split(' ');
+                  const firstWord = words[0];
+                  const remainingWords = words.slice(1).join(' ');
+                  return (
+                    <>
+                      <span className="text-black">{firstWord}</span>
+                      {remainingWords && <span className="text-primary ml-2" style={{color: 'hsl(0 100% 27%)'}}>{remainingWords}</span>}
+                    </>
+                  );
+                })()
               ) : (
                 <>
                   <span className="text-black">Our</span>
-                  <span className="text-primary"> Products</span>
+                  <span className="text-primary ml-2" style={{color: 'hsl(0 100% 27%)'}}>Products</span>
                 </>
               )}
             </h1>
