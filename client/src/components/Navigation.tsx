@@ -14,68 +14,14 @@ import { getOrganizedCategories, getCollections, getProducts, OrganizedCategorie
 // Logo from public folder
 const eloskLogo = '/eloska logo.png';
 
-// Default collections and categories for fallback
-const DEFAULT_COLLECTIONS = ['Mirror Collection', 'Scarfs', 'Bag Fabric'];
-
-const DEFAULT_CATEGORIES: OrganizedCategories = {
-  'Mirror Collection': {
-    categories: [
-      {
-        name: 'Regular Silver Mirrors',
-        subcategories: ['Standard', 'Premium', 'Custom']
-      },
-      {
-        name: 'Artistic Mirrors',
-        subcategories: ['Decorative', 'Vintage', 'Modern']
-      },
-      {
-        name: 'Acrylic Mirror',
-        subcategories: ['Clear', 'Tinted', 'Safety']
-      }
-    ]
-  },
-  'Scarfs': {
-    categories: [
-      {
-        name: 'Bandhani Scarf',
-        subcategories: ['Cotton', 'Silk', 'Georgette']
-      },
-      {
-        name: 'White Scarf',
-        subcategories: ['Plain', 'Embroidered', 'Printed']
-      },
-      {
-        name: 'Baby Scarf',
-        subcategories: ['Soft Cotton', 'Organic', 'Hypoallergenic']
-      }
-    ]
-  },
-  'Bag Fabric': {
-    categories: [
-      {
-        name: 'Digital Print Fabric',
-        subcategories: ['Cotton', 'Polyester', 'Blend']
-      },
-      {
-        name: 'Water Resistant Antifree Fabric',
-        subcategories: ['PVC', 'PU', 'Coated']
-      },
-      {
-        name: 'School Bag Fabric',
-        subcategories: ['Canvas', 'Nylon', 'Leather']
-      }
-    ]
-  }
-};
-
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string>('');
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
-  const [categories, setCategories] = useState<OrganizedCategories | null>(DEFAULT_CATEGORIES);
-  const [collections, setCollections] = useState<string[]>(DEFAULT_COLLECTIONS);
+  const [categories, setCategories] = useState<OrganizedCategories | null>(null);
+  const [collections, setCollections] = useState<string[]>([]);
   const [categoryProducts, setCategoryProducts] = useState<{ [key: string]: Product[] }>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   // Fetch products for a specific category
@@ -100,57 +46,30 @@ const Navigation = () => {
     const fetchNavigationData = async () => {
       try {
         setLoading(true);
-        
-        // Try to fetch from API, but use defaults if it fails
-        let categoriesData = DEFAULT_CATEGORIES;
-        let collectionsData = DEFAULT_COLLECTIONS;
-        
-        try {
-          const [categoriesResponse, collectionsResponse] = await Promise.all([
-            getOrganizedCategories(),
-            getCollections()
-          ]);
-          
-          // Only update if API returns valid data
-          if (categoriesResponse.success && categoriesResponse.data) {
-            categoriesData = categoriesResponse.data;
-          }
-          if (collectionsResponse.success && collectionsResponse.data && Array.isArray(collectionsResponse.data)) {
-            collectionsData = collectionsResponse.data;
-          }
-        } catch (apiError) {
-          console.warn('API fetch failed, using default data:', apiError);
-        }
-        
-        setCategories(categoriesData);
-        setCollections(collectionsData);
+        const [categoriesResponse, collectionsResponse] = await Promise.all([
+          getOrganizedCategories(),
+          getCollections()
+        ]);
+        setCategories(categoriesResponse.data);
+        setCollections(collectionsResponse.data);
 
-        // Fetch products for each category (with error handling)
+        // Fetch products for each category
         const productsMap: { [key: string]: Product[] } = {};
-        for (const collectionName of collectionsData) {
-          const collectionData = categoriesData[collectionName];
+        const collections = collectionsResponse.data || [];
+        for (const collectionName of collections) {
+          const collectionData = categoriesResponse.data[collectionName];
           if (collectionData) {
             const categories = collectionData.categories || [];
             for (const category of categories) {
-              try {
-                const categorySlug = getCategorySlug(category.name);
-                const products = await fetchCategoryProducts(category.name, collectionName);
-                productsMap[`/products/${categorySlug}`] = products;
-              } catch (productError) {
-                console.warn(`Failed to fetch products for ${category.name}:`, productError);
-                // Set empty array as fallback
-                const categorySlug = getCategorySlug(category.name);
-                productsMap[`/products/${categorySlug}`] = [];
-              }
+              const categorySlug = getCategorySlug(category.name);
+              const products = await fetchCategoryProducts(category.name, collectionName);
+              productsMap[`/products/${categorySlug}`] = products;
             }
           }
         }
         setCategoryProducts(productsMap);
       } catch (error) {
-        console.error('Error in navigation data setup:', error);
-        // Ensure we still have default data even if everything fails
-        setCategories(DEFAULT_CATEGORIES);
-        setCollections(DEFAULT_COLLECTIONS);
+        console.error('Error fetching navigation data:', error);
       } finally {
         setLoading(false);
       }
