@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Eye, EyeOff, Star, Image as ImageIcon } from 'lucide-react';
-import { productsApi, categoriesApi, Product, OrganizedCategories } from '@/services/api';
+import { productsApi, Product } from '@/services/api';
+import { STATIC_COLLECTIONS, CollectionName } from '@/types';
 import toast from 'react-hot-toast';
 
 const Products = () => {
@@ -14,8 +15,7 @@ const Products = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [categories, setCategories] = useState<OrganizedCategories | null>(null);
-  const [collections, setCollections] = useState<string[]>([]);
+  const [collections] = useState<CollectionName[]>(Object.keys(STATIC_COLLECTIONS) as CollectionName[]);
   const [subcategorySuggestions, setSubcategorySuggestions] = useState<string[]>([]);
 
   // Form state
@@ -53,22 +53,28 @@ const Products = () => {
 
   // Helper functions
   const getAvailableCategories = () => {
-    if (!categories || !formData.collection) return [];
-    return (categories as any)[formData.collection]?.categories || [];
+    if (!formData.collection) return [];
+    const collectionData = STATIC_COLLECTIONS[formData.collection as CollectionName];
+    return collectionData?.categories || [];
   };
 
-  // Fetch subcategory suggestions
-  const fetchSubcategorySuggestions = async (collection: string, category: string) => {
+  // Get subcategory suggestions from static data
+  const fetchSubcategorySuggestions = (collection: string, category: string) => {
     if (!collection || !category) {
       setSubcategorySuggestions([]);
       return;
     }
     
-    try {
-      const response = await categoriesApi.getSubcategorySuggestions(collection, category);
-      setSubcategorySuggestions(response.data);
-    } catch (error) {
-      console.error('Error fetching subcategory suggestions:', error);
+    const collectionData = STATIC_COLLECTIONS[collection as CollectionName];
+    if (!collectionData) {
+      setSubcategorySuggestions([]);
+      return;
+    }
+    
+    const categoryData = collectionData.categories.find(cat => cat.name === category);
+    if (categoryData) {
+      setSubcategorySuggestions([...categoryData.subcategories]);
+    } else {
       setSubcategorySuggestions([]);
     }
   };
@@ -99,24 +105,6 @@ const Products = () => {
     }
   };
 
-  // Fetch categories
-  const fetchCategories = async () => {
-    try {
-      const [categoriesResponse, collectionsResponse] = await Promise.all([
-        categoriesApi.getAll(),
-        categoriesApi.getCollections()
-      ]);
-      setCategories(categoriesResponse.data);
-      setCollections(collectionsResponse.data);
-    } catch (error: any) {
-      console.error('Error fetching categories:', error);
-      if (error.response?.status === 429) {
-        toast.error('Too many requests. Please wait a moment and try again.');
-      } else {
-        toast.error('Failed to fetch categories');
-      }
-    }
-  };
 
   // Fetch subcategory suggestions when category changes
   useEffect(() => {
@@ -136,55 +124,12 @@ const Products = () => {
     return () => clearTimeout(timeoutId);
   }, [currentPage, searchQuery, categoryFilter, statusFilter]);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Check if category is new and add it to categories
-      if (formData.category && formData.collection) {
-        const existingCategories = getAvailableCategories().map((c: any) => c.name);
-        if (!existingCategories.includes(formData.category)) {
-          try {
-            await categoriesApi.create({
-              collection: formData.collection as 'Mirror Collection' | 'Scarfs' | 'Bag Fabric',
-              category: formData.category,
-              subcategory: undefined,
-              isActive: true,
-              sortOrder: 0
-            });
-            // Refresh categories after adding new category
-            await fetchCategories();
-            toast.success(`New category "${formData.category}" added successfully!`);
-          } catch (error) {
-            console.error('Error adding new category:', error);
-            // Continue with product creation even if category creation fails
-          }
-        }
-      }
-
-      // Add subcategory to categories if provided
-      if (formData.subcategory && formData.collection && formData.category) {
-        try {
-          await categoriesApi.create({
-            collection: formData.collection as 'Mirror Collection' | 'Scarfs' | 'Bag Fabric',
-            category: formData.category,
-            subcategory: formData.subcategory,
-            isActive: true,
-            sortOrder: 0
-          });
-          // Refresh categories after adding subcategory
-          await fetchCategories();
-          toast.success(`Subcategory "${formData.subcategory}" added successfully!`);
-        } catch (error) {
-          console.error('Error adding subcategory:', error);
-          // Continue with product creation even if subcategory creation fails
-        }
-      }
 
       const productData = {
         ...formData,

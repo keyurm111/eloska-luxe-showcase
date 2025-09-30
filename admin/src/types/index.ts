@@ -77,3 +77,34 @@ export interface DashboardStats {
   completedInquiries: number;
   recentInquiries: ProductInquiry[];
 }
+
+// Static collections structure matching the frontend
+export const STATIC_COLLECTIONS = {
+  'Mirror Collection': {
+    categories: [
+      { name: 'Regular Silver Mirrors', subcategories: ['Standard', 'Premium', 'Custom'] },
+      { name: 'Artistic Mirrors', subcategories: ['Decorative', 'Vintage', 'Modern'] },
+      { name: 'Acrylic Mirror', subcategories: ['Clear', 'Tinted', 'Safety'] },
+      { name: 'Catalogues', subcategories: ['Product Catalog', 'Price List', 'Brochure'] },
+      { name: 'Mirrors Sheet', subcategories: ['Thin', 'Medium', 'Thick'] }
+    ]
+  },
+  'Scarfs': {
+    categories: [
+      { name: 'Bandhani Scarf', subcategories: ['Cotton', 'Silk', 'Georgette'] },
+      { name: 'White Scarf', subcategories: ['Plain', 'Embroidered', 'Printed'] },
+      { name: 'Baby Scarf', subcategories: ['Soft Cotton', 'Organic', 'Hypoallergenic'] }
+    ]
+  },
+  'Bag Fabric': {
+    categories: [
+      { name: 'Digital Print Fabric', subcategories: ['Cotton', 'Polyester', 'Blend'] },
+      { name: 'Water Resistant Antifree Fabric', subcategories: ['PVC', 'PU', 'Coated'] },
+      { name: 'School Bag Fabric', subcategories: ['Canvas', 'Nylon', 'Leather'] }
+    ]
+  }
+} as const;
+
+export type CollectionName = keyof typeof STATIC_COLLECTIONS;
+export type CategoryName = typeof STATIC_COLLECTIONS[CollectionName]['categories'][number]['name'];
+export type SubcategoryName = typeof STATIC_COLLECTIONS[CollectionName]['categories'][number]['subcategories'][number];
