@@ -11,7 +11,34 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { usePageTitle } from '@/hooks/use-page-title';
-import { getProducts, getOrganizedCategories, getCollections, Product, ProductFilters, OrganizedCategories } from '@/services/products';
+import { getProducts, Product, ProductFilters } from '@/services/products';
+
+// Static collections structure matching the frontend
+const STATIC_COLLECTIONS = {
+  'Mirror Collection': {
+    categories: [
+      { name: 'Regular Silver Mirrors', subcategories: ['Standard', 'Premium', 'Custom'] },
+      { name: 'Artistic Mirrors', subcategories: ['Decorative', 'Vintage', 'Modern'] },
+      { name: 'Acrylic Mirror', subcategories: ['Clear', 'Tinted', 'Safety'] },
+      { name: 'Catalogues', subcategories: ['Product Catalog', 'Price List', 'Brochure'] },
+      { name: 'Mirrors Sheet', subcategories: ['Thin', 'Medium', 'Thick'] }
+    ]
+  },
+  'Scarfs': {
+    categories: [
+      { name: 'Bandhani Scarf', subcategories: ['Cotton', 'Silk', 'Georgette'] },
+      { name: 'White Scarf', subcategories: ['Plain', 'Embroidered', 'Printed'] },
+      { name: 'Baby Scarf', subcategories: ['Soft Cotton', 'Organic', 'Hypoallergenic'] }
+    ]
+  },
+  'Bag Fabric': {
+    categories: [
+      { name: 'Digital Print Fabric', subcategories: ['Cotton', 'Polyester', 'Blend'] },
+      { name: 'Water Resistant Antifree Fabric', subcategories: ['PVC', 'PU', 'Coated'] },
+      { name: 'School Bag Fabric', subcategories: ['Canvas', 'Nylon', 'Leather'] }
+    ]
+  }
+} as const;
 
 const Products = () => {
   const { category } = useParams();
@@ -29,12 +56,10 @@ const Products = () => {
     return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api'}${imagePath}`;
   };
 
-  // Map URL category to category, subcategory and display name (dynamic)
+  // Map URL category to category, subcategory and display name (static)
   const getCategoryMapping = (urlCategory: string) => {
-    if (!categories) return null;
-    
     // Search through all collections to find the category
-    for (const [collectionName, collectionData] of Object.entries(categories)) {
+    for (const [collectionName, collectionData] of Object.entries(STATIC_COLLECTIONS)) {
       for (const categoryData of collectionData.categories) {
         const categorySlug = getCategorySlug(categoryData.name);
         if (categorySlug === urlCategory) {
@@ -55,7 +80,6 @@ const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<OrganizedCategories | null>(null);
 
   // Convert category name to URL slug (dynamic)
   const getCategorySlug = (categoryName: string) => {
@@ -80,7 +104,7 @@ const Products = () => {
 
   // Set page title based on category
   const getPageTitle = () => {
-    if (category && categories) {
+    if (category) {
       const mapping = getCategoryMapping(category);
       if (mapping) {
         return `${mapping.displayName} - Eloska World`;
@@ -131,25 +155,11 @@ const Products = () => {
     }
   }, [category]);
 
-  // Set page title when category or categories change
+  // Set page title when category changes
   useEffect(() => {
     const pageTitle = getPageTitle();
     document.title = pageTitle;
-  }, [category, categories]);
-
-  // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const categoriesResponse = await getOrganizedCategories();
-        setCategories(categoriesResponse.data);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  }, [category]);
 
   // Fetch products
   const fetchProducts = async () => {
@@ -194,26 +204,22 @@ const Products = () => {
   };
 
   useEffect(() => {
-    // Only fetch products when categories are loaded (if category is specified)
-    if (category && !categories) {
-      return; // Wait for categories to load
-    }
     fetchProducts();
-  }, [currentPage, searchQuery, category, selectedSubcategory, priceRange, minPrice, maxPrice, sortBy, sortOrder, categories]);
+  }, [currentPage, searchQuery, category, selectedSubcategory, priceRange, minPrice, maxPrice, sortBy, sortOrder]);
 
 
   // Get subcategories for the selected category from URL
   const getSubcategoriesForCategory = () => {
-    if (!categories || !category) return [];
+    if (!category) return [];
     
     const mapping = getCategoryMapping(category);
     if (!mapping) return [];
     
     // Find the category across all collections
-    for (const collection of Object.values(categories)) {
+    for (const collection of Object.values(STATIC_COLLECTIONS)) {
       const categoryData = collection.categories.find(cat => cat.name === mapping.category);
       if (categoryData) {
-        return categoryData.subcategories.sort();
+        return [...categoryData.subcategories].sort();
       }
     }
     
@@ -358,8 +364,7 @@ const Products = () => {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-playfair font-bold mb-6">
               {category ? (
                 <>
-                  <span className="text-black">{getCategoryMapping(category)?.displayName?.split(' ')[0] || 'Our'}</span>
-                  <span className="text-primary"> {getCategoryMapping(category)?.displayName?.split(' ').slice(1).join(' ') || 'Products'}</span>
+                  <span className="text-black">{getCategoryMapping(category)?.displayName || 'Products'}</span>
                 </>
               ) : (
                 <>
@@ -370,7 +375,7 @@ const Products = () => {
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               {category 
-                ? `Discover our premium ${getCategoryMapping(category)?.displayName.toLowerCase() || 'products'}. Each item is carefully crafted to meet the highest standards of quality.`
+                ? `Explore our premium ${getCategoryMapping(category)?.displayName.toLowerCase() || 'products'} collection. Each item is carefully crafted to meet the highest standards of quality and design.`
                 : 'Discover our premium collection of high-quality products. Each item is carefully crafted to meet the highest standards of quality.'
               }
             </p>
