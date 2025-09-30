@@ -10,16 +10,18 @@ import {
 } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { getOrganizedCategories, getCollections, getProducts, OrganizedCategories, Product } from '@/services/products';
+import { getOrganizedCategories, getProducts, OrganizedCategories, Product } from '@/services/products';
 // Logo from public folder
 const eloskLogo = '/eloska logo.png';
+
+// Static collections - always available
+const STATIC_COLLECTIONS = ['Mirror Collection', 'Scarfs', 'Bag Fabric'];
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string>('');
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
   const [categories, setCategories] = useState<OrganizedCategories | null>(null);
-  const [collections, setCollections] = useState<string[]>([]);
   const [categoryProducts, setCategoryProducts] = useState<{ [key: string]: Product[] }>({});
   const [loading, setLoading] = useState(true);
   const location = useLocation();
@@ -41,22 +43,17 @@ const Navigation = () => {
     }
   };
 
-  // Fetch categories and collections on component mount
+  // Fetch categories on component mount
   useEffect(() => {
     const fetchNavigationData = async () => {
       try {
         setLoading(true);
-        const [categoriesResponse, collectionsResponse] = await Promise.all([
-          getOrganizedCategories(),
-          getCollections()
-        ]);
+        const categoriesResponse = await getOrganizedCategories();
         setCategories(categoriesResponse.data);
-        setCollections(collectionsResponse.data);
 
-        // Fetch products for each category
+        // Fetch products for each category using static collections
         const productsMap: { [key: string]: Product[] } = {};
-        const collections = collectionsResponse.data || [];
-        for (const collectionName of collections) {
+        for (const collectionName of STATIC_COLLECTIONS) {
           const collectionData = categoriesResponse.data[collectionName];
           if (collectionData) {
             const categories = collectionData.categories || [];
@@ -192,7 +189,7 @@ const Navigation = () => {
                     <span>Loading...</span>
                   </div>
                 ) : (
-                  collections.map((collection) => {
+                  STATIC_COLLECTIONS.map((collection) => {
                     const collectionItems = getNavigationItems(collection);
                     if (collectionItems.length === 0) return null;
                     
@@ -325,7 +322,7 @@ const Navigation = () => {
                     <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
                   </div>
                 ) : (
-                  collections.map((collection) => {
+                  STATIC_COLLECTIONS.map((collection) => {
                     const collectionItems = getNavigationItems(collection);
                     if (collectionItems.length === 0) return null;
                     
