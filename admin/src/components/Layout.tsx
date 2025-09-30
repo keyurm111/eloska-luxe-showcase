@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   MessageSquare, 
   Mail, 
@@ -20,12 +21,13 @@ interface LayoutProps {
 const Layout = ({ children, onLogout }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { adminEmail } = useAuth();
 
   const navigation = [
-    { name: 'Products', href: '/products', icon: Package },
-    { name: 'Product Inquiries', href: '/product-inquiries', icon: MessageSquare },
-    { name: 'Normal Inquiries', href: '/normal-inquiries', icon: Mail },
-    { name: 'Newsletter', href: '/newsletter', icon: Users },
+    { name: 'Products', href: '/admin/products', icon: Package },
+    { name: 'Product Inquiries', href: '/admin/product-inquiries', icon: MessageSquare },
+    { name: 'Normal Inquiries', href: '/admin/normal-inquiries', icon: Mail },
+    { name: 'Newsletter', href: '/admin/newsletter', icon: Users },
   ];
 
   const isActive = (href: string) => {
@@ -113,6 +115,13 @@ const Layout = ({ children, onLogout }: LayoutProps) => {
           <div className="flex flex-1 gap-x-2 self-stretch sm:gap-x-4 lg:gap-x-6">
             <div className="flex flex-1"></div>
             <div className="flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6">
+              {/* Admin Email Display */}
+              {adminEmail && (
+                <div className="hidden sm:flex items-center text-sm text-gray-600">
+                  <span className="font-medium">Welcome,</span>
+                  <span className="ml-1 text-primary font-semibold">{adminEmail}</span>
+                </div>
+              )}
               <button
                 type="button"
                 className="-m-2 p-2 text-gray-400 hover:text-gray-500"
