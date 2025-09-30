@@ -378,10 +378,10 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-6 sm:mb-8">
+        {/* Tab Navigation - Desktop Only */}
+        <div className="hidden sm:block mb-6 lg:mb-8">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex overflow-x-auto space-x-4 sm:space-x-8">
+            <nav className="-mb-px flex space-x-8">
               {[
                 { id: 'specifications', label: 'Specifications' },
                 { id: 'pricing', label: 'Pricing Details' },
@@ -392,7 +392,7 @@ const ProductDetails = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -407,7 +407,168 @@ const ProductDetails = () => {
 
         {/* Tab Content */}
         <div className="mb-6 sm:mb-8">
-          {activeTab === 'specifications' && (
+          {/* Mobile: Show all cards stacked */}
+          <div className="block sm:hidden space-y-4">
+            {/* Specifications Card */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Specifications</h3>
+                {product.specifications && Object.values(product.specifications).some(value => value) ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {Object.entries(product.specifications).map(([key, value]) => {
+                      if (!value) return null;
+                      return (
+                        <div key={key} className="space-y-1">
+                          <span className="text-sm font-medium text-gray-600 capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                          <p className="text-sm text-gray-900">{value}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No specifications available for this product.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pricing Details Card */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Details</h3>
+                <div className="space-y-3">
+                  <div className="flex flex-col py-2 border-b border-gray-100 gap-1">
+                    <span className="text-sm font-medium text-gray-600">Current Price</span>
+                    <span className="text-lg font-bold text-primary">₹{product.price}</span>
+                  </div>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <div className="flex flex-col py-2 border-b border-gray-100 gap-1">
+                      <span className="text-sm font-medium text-gray-600">Original Price</span>
+                      <span className="text-sm text-gray-500 line-through">₹{product.originalPrice}</span>
+                    </div>
+                  )}
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <div className="flex flex-col py-2 border-b border-gray-100 gap-1">
+                      <span className="text-sm font-medium text-gray-600">You Save</span>
+                      <span className="text-sm font-bold text-green-600">
+                        ₹{product.originalPrice - product.price} ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%)
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex flex-col py-2 gap-1">
+                    <span className="text-sm font-medium text-gray-600">Price per piece</span>
+                    <span className="text-sm text-gray-900">₹{product.price}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Features Card */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Features</h3>
+                {product.features && product.features.length > 0 ? (
+                  <ul className="space-y-2">
+                    {product.features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-sm text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500">No features listed for this product.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Additional Information Card */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Description</span>
+                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{product.description}</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 pt-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Created</span>
+                      <p className="text-sm text-gray-700">
+                        {new Date(product.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Last Updated</span>
+                      <p className="text-sm text-gray-700">
+                        {new Date(product.updatedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Information Card */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Information</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Product Code</span>
+                      <p className="text-sm text-gray-900 font-mono">{product.productCode || product._id?.slice(-6) || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Category</span>
+                      <p className="text-sm text-gray-900">{product.category}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Collection</span>
+                      <p className="text-sm text-gray-900">{product.collection}</p>
+                    </div>
+                    {product.subcategory && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">Subcategory</span>
+                        <p className="text-sm text-gray-900">{product.subcategory}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Status</span>
+                      <p className={`text-sm font-medium ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
+                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Minimum Order</span>
+                      <p className="text-sm text-gray-900">{product.minimumQuantity} pieces</p>
+                    </div>
+                    {product.stockQuantity > 0 && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">Available Stock</span>
+                        <p className="text-sm text-gray-900">{product.stockQuantity} pieces</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop: Show only active tab */}
+          <div className="hidden sm:block">
+            {activeTab === 'specifications' && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Specifications</h3>
@@ -577,6 +738,7 @@ const ProductDetails = () => {
               </CardContent>
             </Card>
           )}
+          </div>
         </div>
 
         {/* Related Products Section */}
