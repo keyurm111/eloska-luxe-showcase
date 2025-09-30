@@ -238,10 +238,10 @@ const ProductDetails = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Product Images Section */}
-        <div className="mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             {/* Product Images */}
             <div className="space-y-4">
               {/* Main Image */}
@@ -265,39 +265,39 @@ const ProductDetails = () => {
             </div>
 
             {/* Product Basic Information */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Product Header */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs sm:text-sm">
                     {product.category}
                   </Badge>
                   {product.featured && (
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs sm:text-sm">
                       <Star className="h-3 w-3 mr-1" />
                       Featured
                     </Badge>
                   )}
                 </div>
-                <h1 className="text-3xl font-playfair font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-playfair font-bold text-gray-900 mb-2 leading-tight">
                   {product.name}
                 </h1>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
                   {product.description}
                 </p>
               </div>
 
               {/* Price */}
-              <div className="flex items-center gap-4">
-                <span className="text-3xl font-bold text-primary">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                <span className="text-2xl sm:text-3xl font-bold text-primary">
                   ₹{product.price}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-xl text-gray-500 line-through">
+                  <span className="text-lg sm:text-xl text-gray-500 line-through">
                     ₹{product.originalPrice}
                   </span>
                 )}
-                <span className="text-sm text-gray-600">per piece</span>
+                <span className="text-xs sm:text-sm text-gray-600">per piece</span>
               </div>
 
               {/* Stock Status */}
@@ -322,34 +322,36 @@ const ProductDetails = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={() => setIsInquiryOpen(true)}
-                  className="flex-1 bg-primary hover:bg-primary-glow text-white h-12"
+                  className="flex-1 bg-primary hover:bg-primary-glow text-white h-10 sm:h-12 text-sm sm:text-base"
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Get Quote
                 </Button>
-                <Button
-                  onClick={handleDownload}
-                  variant="outline"
-                  className="h-12 px-4 border-primary text-primary hover:bg-primary hover:text-white transition-colors"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 border-primary text-primary hover:bg-primary hover:text-white transition-colors"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 sm:gap-3">
+                  <Button
+                    onClick={handleDownload}
+                    variant="outline"
+                    className="flex-1 sm:flex-none h-10 sm:h-12 px-3 sm:px-4 border-primary text-primary hover:bg-primary hover:text-white transition-colors text-sm sm:text-base"
+                  >
+                    <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Download</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 sm:h-12 sm:w-12 border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Thumbnail Images */}
               {product.images && product.images.length > 1 && (
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {product.images.map((image, index) => (
                     <button
                       key={index}
@@ -377,20 +379,20 @@ const ProductDetails = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex overflow-x-auto space-x-4 sm:space-x-8">
               {[
                 { id: 'specifications', label: 'Specifications' },
                 { id: 'pricing', label: 'Pricing Details' },
                 { id: 'features', label: 'Features' },
-                { id: 'additional', label: 'Additional Information' },
-                { id: 'product-info', label: 'Product Information' }
+                { id: 'additional', label: 'Additional Info' },
+                { id: 'product-info', label: 'Product Info' }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-2 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -404,13 +406,13 @@ const ProductDetails = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           {activeTab === 'specifications' && (
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Specifications</h3>
                 {product.specifications && Object.values(product.specifications).some(value => value) ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {Object.entries(product.specifications).map(([key, value]) => {
                       if (!value) return null;
                       return (
@@ -432,28 +434,28 @@ const ProductDetails = () => {
 
           {activeTab === 'pricing' && (
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Details</h3>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 gap-1 sm:gap-0">
                     <span className="text-sm font-medium text-gray-600">Current Price</span>
                     <span className="text-lg font-bold text-primary">₹{product.price}</span>
                   </div>
                   {product.originalPrice && product.originalPrice > product.price && (
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 gap-1 sm:gap-0">
                       <span className="text-sm font-medium text-gray-600">Original Price</span>
                       <span className="text-sm text-gray-500 line-through">₹{product.originalPrice}</span>
                     </div>
                   )}
                   {product.originalPrice && product.originalPrice > product.price && (
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 gap-1 sm:gap-0">
                       <span className="text-sm font-medium text-gray-600">You Save</span>
                       <span className="text-sm font-bold text-green-600">
                         ₹{product.originalPrice - product.price} ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%)
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center py-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 gap-1 sm:gap-0">
                     <span className="text-sm font-medium text-gray-600">Price per piece</span>
                     <span className="text-sm text-gray-900">₹{product.price}</span>
                   </div>
@@ -464,7 +466,7 @@ const ProductDetails = () => {
 
           {activeTab === 'features' && (
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Features</h3>
                 {product.features && product.features.length > 0 ? (
                   <ul className="space-y-2">
@@ -484,7 +486,7 @@ const ProductDetails = () => {
 
           {activeTab === 'additional' && (
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
                 <div className="space-y-3">
                   <div>
@@ -520,7 +522,7 @@ const ProductDetails = () => {
 
           {activeTab === 'product-info' && (
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Information</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-3">
@@ -578,15 +580,15 @@ const ProductDetails = () => {
         </div>
 
         {/* Related Products Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-playfair font-bold">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+              <h2 className="text-xl sm:text-2xl font-playfair font-bold">
                 <span className="text-black">Related</span> <span className="text-primary">Products</span>
               </h2>
             {product?.category && (
               <Link 
                 to={`/products?category=${product.category}`}
-                className="text-primary hover:text-primary-glow font-medium text-sm"
+                className="text-primary hover:text-primary-glow font-medium text-sm self-start sm:self-auto"
               >
                 View All in {product.category} →
               </Link>
@@ -594,11 +596,11 @@ const ProductDetails = () => {
           </div>
             
           {relatedLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="overflow-hidden">
                   <div className="aspect-[4/3] bg-gray-200 animate-pulse"></div>
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 sm:p-4">
                     <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
                     <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3"></div>
                   </CardContent>
@@ -606,7 +608,7 @@ const ProductDetails = () => {
               ))}
             </div>
           ) : relatedProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <Card key={relatedProduct._id} className="overflow-hidden group hover:shadow-lg transition-shadow">
                   <Link to={`/products/${relatedProduct._id}`}>
@@ -626,8 +628,8 @@ const ProductDetails = () => {
                         </div>
                       )}
                     </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
                         <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
                           {relatedProduct.category}
                         </Badge>
@@ -638,14 +640,14 @@ const ProductDetails = () => {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors text-sm sm:text-base">
                         {relatedProduct.name}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
                         {relatedProduct.description}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-primary">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-base sm:text-lg font-bold text-primary">
                           ₹{relatedProduct.price}
                         </span>
                         {relatedProduct.originalPrice && relatedProduct.originalPrice > relatedProduct.price && (
