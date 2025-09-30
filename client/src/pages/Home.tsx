@@ -57,7 +57,7 @@ const NewArrivalsSection = () => {
           sortOrder: 'desc',
           status: 'active'
         });
-        setProducts(response.data.products);
+        setProducts(response.data.data);
       } catch (err) {
         console.error('Error fetching new arrivals:', err);
         setError('Failed to load new arrivals');
@@ -70,7 +70,7 @@ const NewArrivalsSection = () => {
   }, []);
 
   // Triple the products for seamless infinite scroll
-  const extendedProducts = [...products, ...products, ...products];
+  const extendedProducts = [...(products || []), ...(products || []), ...(products || [])];
 
   const ProductCard = ({ product }: { product: Product }) => (
     <div className="flex-shrink-0 w-64 sm:w-72 h-80 sm:h-96 bg-white rounded-lg shadow-xl hover:shadow-luxury transition-all duration-300 overflow-hidden group border border-gray-100 flex flex-col mx-1 sm:mx-2 lg:mx-3 my-4">

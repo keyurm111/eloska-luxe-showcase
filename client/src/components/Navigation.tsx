@@ -34,7 +34,7 @@ const Navigation = () => {
         sortBy: 'createdAt',
         sortOrder: 'desc'
       });
-      return response.data.products;
+      return response.data.data;
     } catch (error) {
       console.error(`Error fetching products for ${categoryName}:`, error);
       return [];
@@ -55,10 +55,12 @@ const Navigation = () => {
 
         // Fetch products for each category
         const productsMap: { [key: string]: Product[] } = {};
-        for (const collectionName of collectionsResponse.data) {
+        const collections = collectionsResponse.data || [];
+        for (const collectionName of collections) {
           const collectionData = categoriesResponse.data[collectionName];
           if (collectionData) {
-            for (const category of collectionData.categories) {
+            const categories = collectionData.categories || [];
+            for (const category of categories) {
               const categorySlug = getCategorySlug(category.name);
               const products = await fetchCategoryProducts(category.name, collectionName);
               productsMap[`/products/${categorySlug}`] = products;

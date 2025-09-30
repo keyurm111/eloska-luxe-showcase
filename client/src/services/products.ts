@@ -38,7 +38,7 @@ export interface Product {
 export interface ProductsResponse {
   success: boolean;
   data: {
-    products: Product[];
+    data: Product[];
     total: number;
     page: number;
     limit: number;

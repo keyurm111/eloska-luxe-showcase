@@ -44,7 +44,7 @@ const ProductDetails = () => {
       
       if (response.success && response.data) {
         // Filter out the current product from related products
-        const filtered = response.data.products.filter(p => p._id !== currentProductId);
+        const filtered = response.data.data.filter(p => p._id !== currentProductId);
         setRelatedProducts(filtered.slice(0, 3)); // Show max 3 related products
       }
     } catch (err) {

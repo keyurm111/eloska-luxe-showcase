@@ -108,7 +108,7 @@ const Products = () => {
       if (sortOrder) filters.sortOrder = sortOrder;
 
       const response = await getProducts(filters);
-      setProducts(response.data.products);
+      setProducts(response.data.data);
       setTotalPages(response.data.totalPages);
     } catch (error) {
       console.error('Error fetching products:', error);

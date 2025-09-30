@@ -126,7 +126,7 @@ const Products = () => {
       if (sortOrder) filters.sortOrder = sortOrder as any;
 
       const response = await getProducts(filters);
-      setProducts(response.data.products);
+      setProducts(response.data.data);
       setTotalPages(response.data.totalPages);
       setTotalProducts(response.data.total);
     } catch (error) {
