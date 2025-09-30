@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useState, useEffect, useRef } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { getProducts, Product } from '@/services/products';
 import heroImage from '@/assets/hero-image.jpg';
 import mirrorsImage from '@/assets/mirrors-collection.jpg';
 import scarfsImage from '@/assets/scarfs-collection.jpg';
@@ -12,101 +13,75 @@ import bagFabricImage from '@/assets/bag-fabric-collection.jpg';
 // New Arrivals Section Component
 const NewArrivalsSection = () => {
   const [newArrivalsRef, newArrivalsVisible] = useScrollAnimation();
-  // Product data - All mirror categories plus other categories
-  const products = [
-    {
-      id: 1,
-      name: "Fancy Butterfly shape silver mirror 1421",
-      description: "ONLY MIRROR - Premium silver finish with butterfly design",
-      price: "₹1,323.00",
-      image: "/eloska images/9.png",
-      category: "Regular Silver Mirrors",
-      categoryLink: "/products/regular-silver"
-    },
-    {
-      id: 2,
-      name: "Hand-painted Artistic Mirror",
-      description: "Custom hand-painted mirror with artistic flair",
-      price: "₹899.00",
-      image: "/eloska images/12.png",
-      category: "Artistic Mirrors",
-      categoryLink: "/products/artistic"
-    },
-    {
-      id: 3,
-      name: "Lightweight Acrylic Mirror",
-      description: "Shatterproof acrylic mirror for safety",
-      price: "₹599.00",
-      image: "/eloska images/15.png",
-      category: "Acrylic Mirror",
-      categoryLink: "/products/acrylic"
-    },
-    {
-      id: 4,
-      name: "Premium Mirror Catalog",
-      description: "Comprehensive catalog of all mirror products",
-      price: "₹299.00",
-      image: "/eloska images/9.png",
-      category: "Mirror Catalogues",
-      categoryLink: "/products/catalogues"
-    },
-    {
-      id: 5,
-      name: "Mirror Sheet 4x8",
-      description: "Large format mirror sheet for custom applications",
-      price: "₹1,999.00",
-      image: "/eloska images/12.png",
-      category: "Mirror Sheets",
-      categoryLink: "/products/mirror-sheet"
-    },
-    {
-      id: 6,
-      name: "BLACK BANDHANI SCARF",
-      description: "Traditional black bandhani scarf with authentic tie-dye patterns",
-      price: "₹160.00/piece",
-      image: "/BANDHANI SCARF/BLACK BANDHANI SCARF/1.jpg",
-      category: "Bandhani Scarf",
-      categoryLink: "/products/bandhani"
-    },
-    {
-      id: 7,
-      name: "2 BOX SCARF",
-      description: "Classic white scarf with elegant box pattern design",
-      price: "₹200.00/piece",
-      image: "/WHITE SCARF/2 BOX SCARF/1.jpeg",
-      category: "White Scarf",
-      categoryLink: "/products/white-scarf"
-    },
-    {
-      id: 8,
-      name: "BLACK DHINGLI BABY SCARF",
-      description: "Soft baby scarf with dhingli pattern - perfect for little ones",
-      price: "₹175.00/piece",
-      image: "/BABY SCARF/BLACK DHINGLI BABY SCARF/1.jpg",
-      category: "Baby Scarf",
-      categoryLink: "/products/baby-scarf"
-    },
-    {
-      id: 9,
-      name: "Digital Printed Fabric",
-      description: "High-quality digital printed fabric with customised design",
-      price: "₹69.00/meter",
-      image: "/Digital Print Fabric/Digital Printed Fabric.webp",
-      category: "Digital Print Fabric",
-      categoryLink: "/products/digital"
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Helper function to construct proper image URLs
+  const getImageUrl = (imagePath: string) => {
+    if (imagePath.startsWith('http')) {
+      return imagePath;
     }
-  ];
+    if (imagePath.startsWith('/uploads/')) {
+      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5004'}${imagePath}`;
+    }
+    return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api'}${imagePath}`;
+  };
+
+  // Convert category name to URL slug
+  const getCategorySlug = (categoryName: string) => {
+    const slugMap: { [key: string]: string } = {
+      'Regular Silver Mirrors': 'regular-silver',
+      'Artistic Mirrors': 'artistic',
+      'Acrylic Mirror': 'acrylic',
+      'Catalogues': 'catalogues',
+      'Mirrors Sheet': 'mirror-sheet',
+      'Bandhani Scarf': 'bandhani',
+      'White Scarf': 'white-scarf',
+      'Baby Scarf': 'baby-scarf',
+      'Digital Print Fabric': 'digital',
+      'Water Resistant Antifree Fabric': 'waterproof',
+      'School Bag Fabric': 'school'
+    };
+    return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  // Fetch new arrivals products
+  useEffect(() => {
+    const fetchNewArrivals = async () => {
+      try {
+        setLoading(true);
+        const response = await getProducts({
+          limit: 12,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          status: 'active'
+        });
+        setProducts(response.data.products);
+      } catch (err) {
+        console.error('Error fetching new arrivals:', err);
+        setError('Failed to load new arrivals');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNewArrivals();
+  }, []);
 
   // Triple the products for seamless infinite scroll
   const extendedProducts = [...products, ...products, ...products];
 
-  const ProductCard = ({ product }: { product: any }) => (
+  const ProductCard = ({ product }: { product: Product }) => (
     <div className="flex-shrink-0 w-64 sm:w-72 h-80 sm:h-96 bg-white rounded-lg shadow-xl hover:shadow-luxury transition-all duration-300 overflow-hidden group border border-gray-100 flex flex-col mx-1 sm:mx-2 lg:mx-3 my-4">
       <div className="h-40 sm:h-48 overflow-hidden relative">
         <img 
-          src={product.image} 
+          src={product.images && product.images.length > 0 ? getImageUrl(product.images[0]) : '/placeholder.svg'} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-95 transition-transform duration-500 ease-out"
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder.svg';
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
       </div>
@@ -126,9 +101,9 @@ const NewArrivalsSection = () => {
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-auto gap-2 sm:gap-0">
           <span className="text-primary font-bold text-sm sm:text-lg">
-            {product.price}
+            ₹{product.price}
           </span>
-          <Link to={product.categoryLink}>
+          <Link to={`/products/${getCategorySlug(product.category)}`}>
             <Button size="sm" className="bg-primary hover:bg-primary-glow text-white text-xs sm:text-sm w-full sm:w-auto">
               Explore More
             </Button>
@@ -153,20 +128,47 @@ const NewArrivalsSection = () => {
           </p>
         </div>
 
-        {/* Infinite Scrolling Container - Full Width */}
-        <div className={`relative overflow-hidden w-full transition-all duration-1000 delay-300 ${
-          newArrivalsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
-          {/* Scrolling Container */}
-          <div 
-            className="flex animate-infinite-scroll pl-2 sm:pl-4 lg:pl-6"
-            style={{ width: `calc((256px + 8px) * ${extendedProducts.length})` }}
-          >
-            {extendedProducts.map((product, index) => (
-              <ProductCard key={`${product.id}-${index}`} product={product} />
-            ))}
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Loading new arrivals...</span>
           </div>
-        </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        )}
+
+        {/* Products Display */}
+        {!loading && !error && products.length > 0 && (
+          <div className={`relative overflow-hidden w-full transition-all duration-1000 delay-300 ${
+            newArrivalsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}>
+            {/* Scrolling Container */}
+            <div 
+              className="flex animate-infinite-scroll pl-2 sm:pl-4 lg:pl-6"
+              style={{ width: `calc((256px + 8px) * ${extendedProducts.length})` }}
+            >
+              {extendedProducts.map((product, index) => (
+                <ProductCard key={`${product._id}-${index}`} product={product} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No Products State */}
+        {!loading && !error && products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No new arrivals available at the moment.</p>
+          </div>
+        )}
 
       </div>
     </section>
@@ -554,7 +556,7 @@ const Home = () => {
   // Set page title
   usePageTitle({
     title: "Home - Eloska World | Luxury Manufacturing Excellence",
-    description: "Discover premium manufacturing excellence with Eloska World. Explore our luxury collections of Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, Sari Mirrors and more."
+    description: "Discover premium manufacturing excellence with Eloska World. Explore our luxury collections of Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, Sarees Mirrors and more."
   });
 
   // Function to scroll to New Arrivals section
@@ -630,7 +632,7 @@ const Home = () => {
             </h1>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-white/90 mb-6 lg:mb-8 font-inter leading-relaxed">
               <span className="text-primary font-semibold">Eloska World</span> - Leading manufacturer of premium 
-              Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, and Sari Mirrors
+              Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, and Sarees Mirrors
             </p>
             <div className="transition-all duration-1000 delay-300">
               <Button 

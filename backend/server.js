@@ -20,10 +20,12 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3001',
   process.env.CLIENT_URL || 'http://localhost:8084',
   process.env.ADMIN_CLIENT_URL || 'http://localhost:3003',
+  'http://localhost:3002', // Admin panel port 3002
   'https://eloska.onrender.com',
   'https://eloska-admin.onrender.com',
   'http://localhost:5173', // Vite dev server (main website)
   'http://localhost:8080', // Alternative Vite dev server port
+  'http://localhost:8083', // Client website port 8083
   'http://localhost:3000'  // Alternative React dev server
 ];
 
@@ -48,16 +50,44 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - more lenient for development
+const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 1000 requests in dev, 100 in prod
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
-app.use('/api/', limiter);
+
+// More lenient rate limiting for admin panel
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 200 : 2000, // 2000 requests in dev, 200 in prod
+  message: 'Too many admin requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply different rate limits to different routes
+app.use('/api/products', adminLimiter);
+app.use('/api/categories', adminLimiter);
+app.use('/api/', generalLimiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from uploads directory with CORS headers
+app.use('/uploads', (req, res, next) => {
+  // Set CORS headers for static files
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  // Remove restrictive CORS policy headers
+  res.removeHeader('Cross-Origin-Resource-Policy');
+  res.removeHeader('Cross-Origin-Opener-Policy');
+  next();
+}, express.static('uploads'));
 
 // Performance monitoring middleware
 app.use((req, res, next) => {
@@ -80,6 +110,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eloska-ad
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/products', require('./routes/products'));
+app.use('/api/categories', require('./routes/categories'));
 app.use('/api/product-inquiries', require('./routes/productInquiries'));
 app.use('/api/normal-inquiries', require('./routes/normalInquiries'));
 app.use('/api/newsletter', require('./routes/newsletter'));

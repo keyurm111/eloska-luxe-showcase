@@ -9,7 +9,71 @@ import {
   SortOptions 
 } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://eloska-backend.onrender.com/api';
+// Product interface for admin panel
+export interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  collection: 'Mirror Collection' | 'Scarfs' | 'Bag Fabric';
+  category: string;
+  subcategory?: string;
+  images: string[];
+  features: string[];
+  minimumQuantity: number;
+  specifications?: {
+    size?: string;
+    quantity?: string;
+    finish?: string;
+    material?: string;
+    color?: string;
+    weight?: string;
+    dimensions?: string;
+  };
+  status: 'active' | 'inactive' | 'draft';
+  featured: boolean;
+  inStock: boolean;
+  stockQuantity: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Category interfaces
+export interface ProductCategory {
+  _id: string;
+  collection: 'Mirror Collection' | 'Scarfs' | 'Bag Fabric';
+  category: string;
+  subcategory?: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrganizedCategories {
+  'Mirror Collection': {
+    categories: Array<{
+      name: string;
+      subcategories: string[];
+    }>;
+  };
+  'Scarfs': {
+    categories: Array<{
+      name: string;
+      subcategories: string[];
+    }>;
+  };
+  'Bag Fabric': {
+    categories: Array<{
+      name: string;
+      subcategories: string[];
+    }>;
+  };
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -38,6 +102,57 @@ api.interceptors.response.use(
   }
 );
 
+// Products API
+export const productsApi = {
+  getAll: (page = 1, limit = 12, filters?: any): Promise<ApiResponse<PaginatedResponse<Product>>> =>
+    api.get('/products', {
+      params: { page, limit, ...filters }
+    }).then(res => res.data),
+
+  getById: (id: string): Promise<ApiResponse<Product>> =>
+    api.get(`/products/${id}`).then(res => res.data),
+
+  create: (product: Omit<Product, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Product>> =>
+    api.post('/products', product).then(res => res.data),
+
+  update: (id: string, product: Partial<Product>): Promise<ApiResponse<Product>> =>
+    api.put(`/products/${id}`, product).then(res => res.data),
+
+  delete: (id: string): Promise<ApiResponse<void>> =>
+    api.delete(`/products/${id}`).then(res => res.data),
+
+  updateStatus: (id: string, status: 'active' | 'inactive' | 'draft'): Promise<ApiResponse<Product>> =>
+    api.patch(`/products/${id}/status`, { status }).then(res => res.data),
+
+  getCategories: (): Promise<ApiResponse<{ categories: string[]; subcategories: string[] }>> =>
+    api.get('/products/categories').then(res => res.data),
+};
+
+// Categories API
+export const categoriesApi = {
+  getAll: (): Promise<ApiResponse<OrganizedCategories>> =>
+    api.get('/categories').then(res => res.data),
+
+  getCollections: (): Promise<ApiResponse<string[]>> =>
+    api.get('/categories/collections').then(res => res.data),
+
+  getByCollection: (collection: string): Promise<ApiResponse<{ [key: string]: string[] }>> =>
+    api.get(`/categories/${collection}`).then(res => res.data),
+
+  create: (category: Omit<ProductCategory, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<ProductCategory>> =>
+    api.post('/categories', category).then(res => res.data),
+
+  update: (id: string, category: Partial<ProductCategory>): Promise<ApiResponse<ProductCategory>> =>
+    api.put(`/categories/${id}`, category).then(res => res.data),
+
+  delete: (id: string): Promise<ApiResponse<void>> =>
+    api.delete(`/categories/${id}`).then(res => res.data),
+
+  getSubcategorySuggestions: (collection: string, category: string): Promise<ApiResponse<string[]>> =>
+    api.get('/categories/subcategories/suggestions', {
+      params: { collection, category }
+    }).then(res => res.data),
+};
 
 // Product Inquiries API
 export const productInquiryApi = {

@@ -68,7 +68,7 @@ const Contact = () => {
     console.log('Submitting contact form:', formData);
     
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://eloska-backend.onrender.com'}/api/normal-inquiries/submit`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api'}/normal-inquiries/submit`;
       console.log('Making request to:', apiUrl);
       
       // Create AbortController for timeout
@@ -145,7 +145,7 @@ const Contact = () => {
     {
       icon: <Mail className="h-6 w-6" />,
       title: "Email Us",
-      details: "info@eloskaworld.com",
+      details: "eloskaworld@gmail.com",
       subtitle: "We'll respond within 24 hours"
     },
     {
@@ -153,7 +153,7 @@ const Contact = () => {
       title: "Call Us",
       details: "+91 9978064763",
       subtitle: "Mon-Fri, 9AM-6PM IST",
-      additionalDetails: "+91 9924747157"
+      additionalDetails: "+91 99780 64763"
     },
     {
       icon: <MapPin className="h-6 w-6" />,

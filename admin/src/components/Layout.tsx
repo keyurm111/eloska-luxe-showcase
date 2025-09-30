@@ -8,7 +8,8 @@ import {
   X, 
   LogOut,
   Bell,
-  Settings
+  Settings,
+  Package
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -21,6 +22,7 @@ const Layout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
 
   const navigation = [
+    { name: 'Products', href: '/products', icon: Package },
     { name: 'Product Inquiries', href: '/product-inquiries', icon: MessageSquare },
     { name: 'Normal Inquiries', href: '/normal-inquiries', icon: Mail },
     { name: 'Newsletter', href: '/newsletter', icon: Users },

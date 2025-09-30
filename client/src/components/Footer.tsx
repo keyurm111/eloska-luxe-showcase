@@ -20,7 +20,7 @@ const Footer = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://eloska-backend.onrender.com'}/api/newsletter/subscribe`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api'}/newsletter/subscribe`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -87,7 +87,7 @@ const Footer = () => {
               </div>
             </Link>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Leading manufacturer of premium Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, and Sari Mirrors. 
+              Leading manufacturer of premium Face Masks, Ladies Kurtis, Scarfs, Bag Fabrics, and Sarees Mirrors. 
               <span className="text-primary font-semibold"> Luxury in every detail.</span>
             </p>
             
@@ -218,8 +218,8 @@ const Footer = () => {
                 </div>
                 <div>
                   <p className="text-sm text-slate-300">Email Us</p>
-                  <a href="mailto:info@eloskaworld.com" className="text-sm text-white hover:text-primary transition-colors duration-300">
-                    info@eloskaworld.com
+                  <a href="mailto:eloskaworld@gmail.com" className="text-sm text-white hover:text-primary transition-colors duration-300">
+                    eloskaworld@gmail.com
                   </a>
                 </div>
               </div>
@@ -229,8 +229,8 @@ const Footer = () => {
                 </div>
                 <div>
                   <p className="text-sm text-slate-300">Call Us</p>
-                  <a href="tel:+919876543210" className="text-sm text-white hover:text-primary transition-colors duration-300">
-                    +91 98765 43210
+                  <a href="tel:+919978064763" className="text-sm text-white hover:text-primary transition-colors duration-300">
+                    +91 99780 64763
                   </a>
                 </div>
               </div>
@@ -269,7 +269,7 @@ const Footer = () => {
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
               <p className="text-sm text-slate-400">
-                © 2024 Eloska World. All rights reserved.
+                © {new Date().getFullYear()} Eloska World. All rights reserved.
               </p>
               <div className="flex space-x-6">
                 <a href="#" className="text-sm text-slate-400 hover:text-primary transition-colors duration-300">
