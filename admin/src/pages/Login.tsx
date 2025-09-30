@@ -25,7 +25,7 @@ const Login = () => {
       localStorage.setItem('admin_email', email);
       localStorage.setItem('admin_login_time', new Date().toISOString());
       
-      // Redirect to dashboard
+      // Redirect to admin dashboard
       navigate('/admin');
     } else {
       setError('Invalid email or password. Please try again.');

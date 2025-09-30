@@ -56,7 +56,7 @@ function AppContent() {
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="*" element={<Navigate to="/admin/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <Toaster position="top-right" />
     </div>
