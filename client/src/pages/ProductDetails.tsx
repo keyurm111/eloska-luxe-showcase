@@ -386,8 +386,8 @@ const ProductDetails = () => {
                 { id: 'specifications', label: 'Specifications' },
                 { id: 'pricing', label: 'Pricing Details' },
                 { id: 'features', label: 'Features' },
-                { id: 'additional', label: 'Additional Info' },
-                { id: 'product-info', label: 'Product Info' }
+                { id: 'additional', label: 'Additional Information' },
+                { id: 'product-info', label: 'Product Information' }
               ].map((tab) => (
                 <button
                   key={tab.id}
