@@ -47,7 +47,6 @@ const Products = () => {
   });
 
   const [newFeature, setNewFeature] = useState('');
-  const [newTag, setNewTag] = useState('');
   const [newImage, setNewImage] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<FileList | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -86,7 +85,7 @@ const Products = () => {
       if (statusFilter) filters.status = statusFilter;
 
       const response = await productsApi.getAll(currentPage, 12, filters);
-      setProducts(response.data.products);
+      setProducts(response.data.data);
       setTotalPages(response.data.totalPages);
     } catch (error: any) {
       console.error('Error fetching products:', error);
@@ -323,24 +322,6 @@ const Products = () => {
     }));
   };
 
-  // Add tag
-  const addTag = () => {
-    if (newTag.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }));
-      setNewTag('');
-    }
-  };
-
-  // Remove tag
-  const removeTag = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index)
-    }));
-  };
 
   // Add image
   const addImage = () => {

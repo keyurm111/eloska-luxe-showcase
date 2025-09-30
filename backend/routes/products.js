@@ -109,7 +109,7 @@ router.get('/', [
     res.json({
       success: true,
       data: {
-        products,
+        data: products,
         total,
         page,
         limit,
