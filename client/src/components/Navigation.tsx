@@ -10,20 +10,41 @@ import {
 } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { getOrganizedCategories, getProducts, OrganizedCategories, Product } from '@/services/products';
+import { getProducts, Product } from '@/services/products';
 // Logo from public folder
 const eloskLogo = '/eloska logo.png';
 
-// Static collections - always available
-const STATIC_COLLECTIONS = ['Mirror Collection', 'Scarfs', 'Bag Fabric'];
+// Static collections with their categories - always available
+const STATIC_COLLECTIONS = {
+  'Mirror Collection': {
+    categories: [
+      { name: 'Regular Silver Mirrors', subcategories: ['Standard', 'Premium', 'Custom'] },
+      { name: 'Artistic Mirrors', subcategories: ['Decorative', 'Vintage', 'Modern'] },
+      { name: 'Acrylic Mirror', subcategories: ['Clear', 'Tinted', 'Safety'] }
+    ]
+  },
+  'Scarfs': {
+    categories: [
+      { name: 'Bandhani Scarf', subcategories: ['Cotton', 'Silk', 'Georgette'] },
+      { name: 'White Scarf', subcategories: ['Plain', 'Embroidered', 'Printed'] },
+      { name: 'Baby Scarf', subcategories: ['Soft Cotton', 'Organic', 'Hypoallergenic'] }
+    ]
+  },
+  'Bag Fabric': {
+    categories: [
+      { name: 'Digital Print Fabric', subcategories: ['Cotton', 'Polyester', 'Blend'] },
+      { name: 'Water Resistant Antifree Fabric', subcategories: ['PVC', 'PU', 'Coated'] },
+      { name: 'School Bag Fabric', subcategories: ['Canvas', 'Nylon', 'Leather'] }
+    ]
+  }
+};
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string>('');
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
-  const [categories, setCategories] = useState<OrganizedCategories | null>(null);
   const [categoryProducts, setCategoryProducts] = useState<{ [key: string]: Product[] }>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No loading needed for static data
   const location = useLocation();
 
   // Fetch products for a specific category
@@ -43,36 +64,30 @@ const Navigation = () => {
     }
   };
 
-  // Fetch categories on component mount
+  // Initialize with static data - no database fetching needed
   useEffect(() => {
-    const fetchNavigationData = async () => {
+    const initializeStaticData = async () => {
       try {
         setLoading(true);
-        const categoriesResponse = await getOrganizedCategories();
-        setCategories(categoriesResponse.data);
-
+        
         // Fetch products for each category using static collections
         const productsMap: { [key: string]: Product[] } = {};
-        for (const collectionName of STATIC_COLLECTIONS) {
-          const collectionData = categoriesResponse.data[collectionName];
-          if (collectionData) {
-            const categories = collectionData.categories || [];
-            for (const category of categories) {
-              const categorySlug = getCategorySlug(category.name);
-              const products = await fetchCategoryProducts(category.name, collectionName);
-              productsMap[`/products/${categorySlug}`] = products;
-            }
+        for (const [collectionName, collectionData] of Object.entries(STATIC_COLLECTIONS)) {
+          for (const category of collectionData.categories) {
+            const categorySlug = getCategorySlug(category.name);
+            const products = await fetchCategoryProducts(category.name, collectionName);
+            productsMap[`/products/${categorySlug}`] = products;
           }
         }
         setCategoryProducts(productsMap);
       } catch (error) {
-        console.error('Error fetching navigation data:', error);
+        console.error('Error fetching product data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNavigationData();
+    initializeStaticData();
   }, []);
 
   // Function to get top 3 products for each category with real data
@@ -91,11 +106,12 @@ const Navigation = () => {
   };
 
 
-  // Generate navigation items dynamically from categories
+  // Generate navigation items from static collections
   const getNavigationItems = (collectionName: string) => {
-    if (!categories || !categories[collectionName]) return [];
+    const collectionData = STATIC_COLLECTIONS[collectionName as keyof typeof STATIC_COLLECTIONS];
+    if (!collectionData) return [];
     
-    return categories[collectionName].categories.map(category => ({
+    return collectionData.categories.map(category => ({
       title: category.name,
       href: `/products/${getCategorySlug(category.name)}`
     }));
@@ -189,7 +205,7 @@ const Navigation = () => {
                     <span>Loading...</span>
                   </div>
                 ) : (
-                  STATIC_COLLECTIONS.map((collection) => {
+                  Object.keys(STATIC_COLLECTIONS).map((collection) => {
                     const collectionItems = getNavigationItems(collection);
                     if (collectionItems.length === 0) return null;
                     
@@ -322,7 +338,7 @@ const Navigation = () => {
                     <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
                   </div>
                 ) : (
-                  STATIC_COLLECTIONS.map((collection) => {
+                  Object.keys(STATIC_COLLECTIONS).map((collection) => {
                     const collectionItems = getNavigationItems(collection);
                     if (collectionItems.length === 0) return null;
                     
