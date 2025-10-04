@@ -10,109 +10,37 @@ import {
 } from '@/components/ui/navigation-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { getProducts, Product } from '@/services/products';
+import { useCategories } from '@/contexts/CategoriesContext';
+import { useCategoryProducts } from '@/hooks/useCategoryProducts';
 // Logo from public folder
 const eloskLogo = '/eloska logo.png';
-
-// Static collections with their categories - always available
-const STATIC_COLLECTIONS = {
-  'Mirror Collection': {
-    categories: [
-      { name: 'Regular Silver Mirrors', subcategories: ['Standard', 'Premium', 'Custom'] },
-      { name: 'Artistic Mirrors', subcategories: ['Decorative', 'Vintage', 'Modern'] },
-      { name: 'Acrylic Mirror', subcategories: ['Clear', 'Tinted', 'Safety'] },
-      { name: 'Catalogues', subcategories: ['Product Catalog', 'Price List', 'Brochure'] },
-      { name: 'Mirrors Sheet', subcategories: ['Thin', 'Medium', 'Thick'] }
-    ]
-  },
-  'Scarfs': {
-    categories: [
-      { name: 'Bandhani Scarf', subcategories: ['Cotton', 'Silk', 'Georgette'] },
-      { name: 'White Scarf', subcategories: ['Plain', 'Embroidered', 'Printed'] },
-      { name: 'Baby Scarf', subcategories: ['Soft Cotton', 'Organic', 'Hypoallergenic'] }
-    ]
-  },
-  'Bag Fabric': {
-    categories: [
-      { name: 'Digital Print Fabric', subcategories: ['Cotton', 'Polyester', 'Blend'] },
-      { name: 'Water Resistant Antifree Fabric', subcategories: ['PVC', 'PU', 'Coated'] },
-      { name: 'School Bag Fabric', subcategories: ['Canvas', 'Nylon', 'Leather'] }
-    ]
-  }
-};
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string>('');
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
-  const [categoryProducts, setCategoryProducts] = useState<{ [key: string]: Product[] }>({});
-  const [loading, setLoading] = useState(false);
   const location = useLocation();
 
-  // Fetch products for a specific category
-  const fetchCategoryProducts = async (categoryName: string, collectionName: string) => {
-    try {
-      const response = await getProducts({
-        category: categoryName,
-        collection: collectionName,
-        limit: 3,
-        sortBy: 'createdAt',
-        sortOrder: 'desc'
-      });
-      return response.data.data;
-    } catch (error) {
-      console.error(`Error fetching products for ${categoryName}:`, error);
-      return [];
-    }
-  };
+  // Use categories context and lazy loading hook
+  const { categories, loading: categoriesLoading } = useCategories();
+  const { fetchCategoryProducts, getTop3Products } = useCategoryProducts();
 
-  // Initialize with static data and fetch product previews
-  useEffect(() => {
-    const initializeNavigationData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch products for each category using static collections
-        const productsMap: { [key: string]: Product[] } = {};
-        for (const [collectionName, collectionData] of Object.entries(STATIC_COLLECTIONS)) {
-          for (const category of collectionData.categories) {
-            const categorySlug = getCategorySlug(category.name);
-            const products = await fetchCategoryProducts(category.name, collectionName);
-            productsMap[`/products/${categorySlug}`] = products;
-          }
-        }
-        setCategoryProducts(productsMap);
-      } catch (error) {
-        console.error('Error fetching product previews:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeNavigationData();
-  }, []);
-
-  // Function to get top 3 products for each category with real data
-  const getTop3Products = (href: string) => {
-    const products = categoryProducts[href] || [];
-    return products.slice(0, 3).map(product => ({
-      name: product.name,
-      code: product.productCode || product._id?.slice(-6) || 'N/A',
-      description: product.description || 'Premium quality product',
-      image: product.images && product.images.length > 0 
-        ? (product.images[0].startsWith('http') 
-            ? product.images[0] 
-            : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5004'}${product.images[0]}`)
-        : '/placeholder.svg'
-    }));
-  };
-
-
-  // Generate navigation items from static collections
-  const getNavigationItems = (collectionName: string) => {
-    const collectionData = STATIC_COLLECTIONS[collectionName as keyof typeof STATIC_COLLECTIONS];
-    if (!collectionData) return [];
+  // Lazy load products when hovering over a category
+  const handleCategoryHover = async (categoryName: string, collectionName: string) => {
+    const categorySlug = getCategorySlug(categoryName);
+    const href = `/products/${categorySlug}`;
+    setHoveredCategory(href);
     
+    // Lazy load products for this category with proper key
+    await fetchCategoryProducts(categoryName, collectionName);
+  };
+
+
+  // Generate navigation items from backend categories
+  const getNavigationItems = (collectionName: string) => {
+    if (!categories || !categories[collectionName as keyof typeof categories]) return [];
+    
+    const collectionData = categories[collectionName as keyof typeof categories];
     return collectionData.categories.map(category => ({
       title: category.name,
       href: `/products/${getCategorySlug(category.name)}`
@@ -201,13 +129,13 @@ const Navigation = () => {
           <div className="hidden lg:flex flex-1 justify-center items-center space-x-6">
             <NavigationMenu>
               <NavigationMenuList className="space-x-4">
-                {loading ? (
+                {categoriesLoading ? (
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                     <span>Loading...</span>
                   </div>
-                ) : (
-                  Object.keys(STATIC_COLLECTIONS).map((collection) => {
+                ) : categories ? (
+                  Object.keys(categories).map((collection) => {
                     const collectionItems = getNavigationItems(collection);
                     if (collectionItems.length === 0) return null;
                     
@@ -218,7 +146,12 @@ const Navigation = () => {
                         </NavigationMenuTrigger>
                         <NavigationMenuContent 
                           className="bg-background border shadow-luxury"
-                          onMouseEnter={() => setHoveredCategory(collectionItems[0]?.href || '')}
+                          onMouseEnter={() => {
+                            if (collectionItems[0]) {
+                              const categoryName = collectionItems[0].title;
+                              handleCategoryHover(categoryName, collection);
+                            }
+                          }}
                           onMouseLeave={() => setHoveredCategory('')}
                         >
                           <div className="flex w-[800px] h-[450px]">
@@ -235,7 +168,7 @@ const Navigation = () => {
                                         ? 'text-primary bg-primary/10' 
                                         : 'text-foreground hover:text-primary hover:bg-primary/10'
                                     } focus:text-foreground active:text-foreground`}
-                                    onMouseEnter={() => setHoveredCategory(item.href)}
+                                    onMouseEnter={() => handleCategoryHover(item.title, collection)}
                                     onClick={closeDropdown}
                                   >
                                     {item.title}
@@ -298,6 +231,8 @@ const Navigation = () => {
                       </NavigationMenuItem>
                     );
                   })
+                ) : (
+                  <div className="text-sm text-muted-foreground">No categories available</div>
                 )}
               </NavigationMenuList>
             </NavigationMenu>
@@ -334,13 +269,13 @@ const Navigation = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] bg-background border-l">
               <div className="flex flex-col space-y-1 mt-8">
-                {loading ? (
+                {categoriesLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
                   </div>
-                ) : (
-                  Object.keys(STATIC_COLLECTIONS).map((collection) => {
+                ) : categories ? (
+                  Object.keys(categories).map((collection) => {
                     const collectionItems = getNavigationItems(collection);
                     if (collectionItems.length === 0) return null;
                     
@@ -371,6 +306,8 @@ const Navigation = () => {
                       </div>
                     );
                   })
+                ) : (
+                  <div className="text-sm text-muted-foreground px-6 py-3">No categories available</div>
                 )}
 
                 <MobileNavLink href="/about">About Us</MobileNavLink>
